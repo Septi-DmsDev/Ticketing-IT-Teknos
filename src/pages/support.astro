@@ -226,57 +226,63 @@ import Layout from '../layouts/Layout.astro';
     const rawWa = formData.get('whatsapp') as string;
     const waNumber = formatWhatsAppNumber(rawWa);
     
-    const attachmentFile = formData.get('attachment') as File;
-    let attachment_url: string | undefined = undefined;
+    try {
+      const attachmentFile = formData.get('attachment') as File;
+      let attachment_url: string | undefined = undefined;
 
-    if (attachmentFile && attachmentFile.size > 0) {
-      const url = await uploadAttachment(attachmentFile);
-      if (url) attachment_url = url;
-      else {
-        showError('Gagal mengupload screenshot. Pastikan file valid.');
+      if (attachmentFile && attachmentFile.size > 0) {
+        const url = await uploadAttachment(attachmentFile);
+        if (url) attachment_url = url;
+        else {
+          showError('Gagal mengupload screenshot. Pastikan file valid dan ukuran tidak melebihi 5MB.');
+          btn.disabled = false;
+          btn.innerHTML = originalHTML;
+          return;
+        }
+      }
+
+      btn.textContent = 'Mengirim Laporan...';
+
+      const result = await submitSupportTicket({
+        reporter_name: formData.get('name') as string,
+        reporter_position: formData.get('position') as string,
+        reporter_division: formData.get('division') as string,
+        whatsapp_number: waNumber || undefined,
+        category_id: formData.get('category') as string,
+        category_name: categoryName,
+        description: formData.get('description') as string,
+        location: formData.get('location') as string || undefined,
+        attachment_url: attachment_url
+      });
+
+      if (result.success && result.ticket_code) {
+        // Save to localStorage
+        try {
+          const saved = JSON.parse(localStorage.getItem('saved_tickets') || '[]');
+          saved.unshift({ 
+            code: result.ticket_code, 
+            title: 'Support: ' + (categoryName), 
+            date: new Date().toISOString() 
+          });
+          localStorage.setItem('saved_tickets', JSON.stringify(saved.slice(0, 10)));
+        } catch (e) {
+          console.error('Failed to save ticket to localStorage', e);
+        }
+
+        const modal = document.getElementById('success-modal');
+        const codeEl = document.getElementById('success-ticket-code');
+        if (codeEl) codeEl.textContent = result.ticket_code;
+        if (modal) modal.classList.remove('hidden');
+      } else {
+        showError(result.error || 'Gagal mengirim laporan. Silakan coba lagi.');
         btn.disabled = false;
         btn.innerHTML = originalHTML;
-        return;
       }
+    } catch (err: any) {
+      console.error(err);
+      showError('Terjadi kesalahan tidak terduga saat memproses laporan: ' + err.message);
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
     }
-
-    btn.textContent = 'Mengirim Laporan...';
-
-    const result = await submitSupportTicket({
-      reporter_name: formData.get('name') as string,
-      reporter_position: formData.get('position') as string,
-      reporter_division: formData.get('division') as string,
-      whatsapp_number: waNumber || undefined,
-      category_id: formData.get('category') as string,
-      category_name: categoryName,
-      description: formData.get('description') as string,
-      location: formData.get('location') as string || undefined,
-      attachment_url: attachment_url
-    });
-
-    if (result.success && result.ticket_code) {
-      // Save to localStorage
-      try {
-        const saved = JSON.parse(localStorage.getItem('saved_tickets') || '[]');
-        saved.unshift({ 
-          code: result.ticket_code, 
-          title: 'Support: ' + (selectedOption?.text || formData.get('category')), 
-          date: new Date().toISOString() 
-        });
-        localStorage.setItem('saved_tickets', JSON.stringify(saved.slice(0, 10)));
-      } catch (e) {
-        console.error('Failed to save ticket to localStorage', e);
-      }
-
-      const modal = document.getElementById('success-modal');
-      const codeEl = document.getElementById('success-ticket-code');
-      if (codeEl) codeEl.textContent = result.ticket_code;
-      if (modal) modal.classList.remove('hidden');
-    } else {
-      showError(result.error || 'Gagal mengirim laporan. Silakan coba lagi.');
-    }
-
-    btn.disabled = false;
-    btn.innerHTML = originalHTML;
   });
 </script>
