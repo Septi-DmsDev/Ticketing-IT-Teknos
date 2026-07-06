@@ -41,8 +41,14 @@ export function startSupabaseListener() {
   if (!ADMIN_WA) {
     console.warn('[BOT] ADMIN_WA_NUMBER is not set in .env! IT notifications will not be sent.');
   }
-  const adminJid = formatPhone(ADMIN_WA);
+  
+  // Split multiple numbers by comma
+  const adminJids = ADMIN_WA.split(',')
+    .map(num => num.trim())
+    .filter(num => num.length > 0)
+    .map(formatPhone);
 
+  console.log(`[BOT] IT Notifications will be sent to ${adminJids.length} numbers.`);
   console.log('[BOT] Subscribing to Supabase Realtime for support_tickets and feature_requests...');
 
   // Listen to support_tickets
@@ -55,24 +61,20 @@ export function startSupabaseListener() {
         console.log('[BOT] New Support Ticket Inserted:', payload.new.ticket_code);
         const { ticket_code, reporter_name, reporter_division, description } = payload.new;
         const msg = `🚨 *TIKET SUPPORT BARU* 🚨\n\n*Kode*: ${ticket_code}\n*Pelapor*: ${reporter_name} (${reporter_division})\n*Keluhan*:\n_${description}_\n\nSegera cek dashboard admin!`;
-        if (adminJid) sendWhatsAppMessage(adminJid, msg);
+        adminJids.forEach(jid => sendWhatsAppMessage(jid, msg));
       }
     )
     .on(
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'support_tickets' },
       (payload) => {
-        // Notification for updates (e.g. status changes)
-        // Note: For notifying reporters, we need their WA number. 
-        // Currently not in the schema, so we only log or notify admin.
         const oldStatus = payload.old.status;
         const newStatus = payload.new.status;
         
         if (oldStatus !== newStatus && newStatus === 'resolved') {
            console.log(`[BOT] Support Ticket ${payload.new.ticket_code} resolved.`);
            const msg = `✅ *TIKET SUPPORT SELESAI*\n\nKode: ${payload.new.ticket_code} telah ditandai Selesai (Resolved) oleh IT.\n\nCatatan IT: ${payload.new.it_response || '-'}`;
-           // If we had user's WA, we'd send it to them. For now, just notify Admin for testing.
-           if (adminJid) sendWhatsAppMessage(adminJid, msg);
+           adminJids.forEach(jid => sendWhatsAppMessage(jid, msg));
         }
       }
     )
@@ -88,7 +90,7 @@ export function startSupabaseListener() {
         console.log('[BOT] New Feature Request Inserted:', payload.new.ticket_code);
         const { ticket_code, requester_name, requester_division, title } = payload.new;
         const msg = `💡 *PENGAJUAN SISTEM BARU* 💡\n\n*Kode*: ${ticket_code}\n*Pemohon*: ${requester_name} (${requester_division})\n*Judul*: ${title}\n\nMohon lakukan review di dashboard admin!`;
-        if (adminJid) sendWhatsAppMessage(adminJid, msg);
+        adminJids.forEach(jid => sendWhatsAppMessage(jid, msg));
       }
     )
     .subscribe();
