@@ -155,7 +155,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { submitSupportTicket, getActiveCategories } from '../lib/ticket';
+  import { submitSupportTicket, getActiveCategories, uploadAttachment, formatWhatsAppNumber } from '../lib/ticket';
 
   // Load dynamic categories from Supabase
   async function loadCategories() {
