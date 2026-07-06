@@ -38,7 +38,7 @@ async function connectToWhatsApp() {
       } else {
         console.log('[BOT] You are logged out. Please delete auth folder and scan QR again.');
       }
-    if (connection === 'open') {
+    } else if (connection === 'open') {
       console.log('[BOT] WhatsApp connected successfully!');
       if (!(global as any).isListening) {
         startSupabaseListener();
