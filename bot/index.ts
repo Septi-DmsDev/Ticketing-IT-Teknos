@@ -7,7 +7,8 @@ import { startSupabaseListener } from './supabaseListener.js';
 
 dotenv.config();
 
-const SESSION_DIR = process.env.WA_SESSION_FOLDER || './auth_info_baileys';
+// Force a completely new session folder to bypass corrupted docker volumes
+const SESSION_DIR = './auth_session_v2';
 
 // Keep socket instance available for external modules
 export let waSocket: ReturnType<typeof makeWASocket> | null = null;
