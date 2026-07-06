@@ -106,7 +106,7 @@ import Layout from '../layouts/Layout.astro';
                   <p id="sup-attachment-label" class="text-sm text-secondary">Klik untuk memilih gambar atau drag & drop</p>
                   <p class="text-xs text-secondary-light">Wajib upload bukti (JPG, PNG — Maks. 5MB)</p>
                 </div>
-                <input id="sup-attachment" name="attachment" type="file" required class="hidden" accept=".jpg,.jpeg,.png" onchange="updateFileName(this, 'sup-attachment-label')" />
+                <input id="sup-attachment" name="attachment" type="file" class="hidden" accept=".jpg,.jpeg,.png" onchange="updateFileName(this, 'sup-attachment-label')" />
               </label>
             </div>
 
@@ -229,6 +229,13 @@ import Layout from '../layouts/Layout.astro';
     try {
       const attachmentFile = formData.get('attachment') as File;
       let attachment_url: string | undefined = undefined;
+
+      if (!attachmentFile || attachmentFile.size === 0) {
+        showError('Wajib mengupload screenshot error atau foto kondisi di lapangan.');
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        return;
+      }
 
       if (attachmentFile && attachmentFile.size > 0) {
         const url = await uploadAttachment(attachmentFile);
