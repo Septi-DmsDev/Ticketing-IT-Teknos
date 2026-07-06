@@ -38,11 +38,12 @@ async function connectToWhatsApp() {
       } else {
         console.log('[BOT] You are logged out. Please delete auth folder and scan QR again.');
       }
-    } else if (connection === 'open') {
+    if (connection === 'open') {
       console.log('[BOT] WhatsApp connected successfully!');
-      
-      // Start listening to Supabase events once WA is connected
-      startSupabaseListener();
+      if (!(global as any).isListening) {
+        startSupabaseListener();
+        (global as any).isListening = true;
+      }
     }
   });
 
