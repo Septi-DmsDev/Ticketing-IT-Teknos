@@ -10,6 +10,7 @@ export interface SupportTicketPayload {
   reporter_name: string;
   reporter_position: string;
   reporter_division: string;
+  whatsapp_number?: string;
   category_id: string;
   category_name: string;
   description: string;
@@ -21,6 +22,7 @@ export interface FeatureRequestPayload {
   requester_name: string;
   requester_position: string;
   requester_division: string;
+  whatsapp_number?: string;
   title: string;
   background: string;
   description: string;
@@ -38,6 +40,20 @@ export interface TicketResult {
 // =========================================================
 // Helpers
 // =========================================================
+
+/**
+ * Format string to a valid WhatsApp number (e.g. 628...)
+ */
+export function formatWhatsAppNumber(phone: string): string {
+  if (!phone) return '';
+  // Remove all non-numeric characters
+  let cleaned = phone.replace(/\D/g, '');
+  // Convert leading 0 to 62
+  if (cleaned.startsWith('0')) {
+    cleaned = '62' + cleaned.substring(1);
+  }
+  return cleaned;
+}
 
 /**
  * Generate a unique ticket code.
@@ -75,6 +91,7 @@ export async function submitSupportTicket(payload: SupportTicketPayload): Promis
     reporter_name: payload.reporter_name,
     reporter_position: payload.reporter_position,
     reporter_division: payload.reporter_division,
+    whatsapp_number: payload.whatsapp_number || null,
     category_id: payload.category_id || null,
     category_name: payload.category_name,
     description: payload.description,
@@ -110,6 +127,7 @@ export async function submitFeatureRequest(payload: FeatureRequestPayload): Prom
     requester_name: payload.requester_name,
     requester_position: payload.requester_position,
     requester_division: payload.requester_division,
+    whatsapp_number: payload.whatsapp_number || null,
     title: payload.title,
     background: payload.background,
     description: payload.description,

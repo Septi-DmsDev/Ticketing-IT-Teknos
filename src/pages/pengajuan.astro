@@ -57,6 +57,10 @@ import Layout from '../layouts/Layout.astro';
               <label for="req-division" class="block text-sm font-600 text-text-dark mb-2">Divisi / Departemen <span class="text-red-500">*</span></label>
               <input id="req-division" name="division" type="text" required placeholder="Contoh: Keuangan & Akuntansi" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light" />
             </div>
+            <div class="md:col-span-2">
+              <label for="req-whatsapp" class="block text-sm font-600 text-text-dark mb-2">Nomor WhatsApp <span class="text-red-500">*</span></label>
+              <input id="req-whatsapp" name="whatsapp" type="tel" required placeholder="Contoh: 08123456789 (untuk notifikasi status tiket)" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light" />
+            </div>
           </div>
         </section>
 
@@ -160,7 +164,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { submitFeatureRequest, uploadAttachment } from '../lib/ticket';
+  import { submitFeatureRequest, uploadAttachment, formatWhatsAppNumber } from '../lib/ticket';
 
   function updateFileName(input: HTMLInputElement, labelId: string) {
     const label = document.getElementById(labelId);
@@ -198,6 +202,11 @@ import Layout from '../layouts/Layout.astro';
     btn.textContent = 'Mengupload Lampiran...';
 
     const formData = new FormData(form);
+    
+    // Format WhatsApp Number
+    const rawWa = formData.get('whatsapp') as string;
+    const waNumber = formatWhatsAppNumber(rawWa);
+
     const attachmentFile = formData.get('attachment') as File;
     let attachment_url: string | undefined = undefined;
 
@@ -218,6 +227,7 @@ import Layout from '../layouts/Layout.astro';
       requester_name: formData.get('name') as string,
       requester_position: formData.get('position') as string,
       requester_division: formData.get('division') as string,
+      whatsapp_number: waNumber || undefined,
       title: formData.get('title') as string,
       background: formData.get('background') as string,
       description: formData.get('description') as string,
