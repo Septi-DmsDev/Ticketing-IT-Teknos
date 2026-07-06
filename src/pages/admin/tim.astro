@@ -1,0 +1,207 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase, supabaseAdmin } from '../../lib/supabase';
+
+// Security check: Must be logged in
+const cookieHeader = Astro.request.headers.get('cookie') || '';
+const accessToken = cookieHeader.match(/sb-access-token=([^;]*)/)?.[1];
+if (!accessToken) return Astro.redirect('/admin/login');
+
+const { data: { user } } = await supabase.auth.getUser(accessToken);
+if (!user) return Astro.redirect('/admin/login');
+
+// Process Form Submit (Add New IT Staff)
+let successMsg = '';
+let errorMsg = '';
+
+if (Astro.request.method === 'POST') {
+  try {
+    const bodyText = await Astro.request.text();
+    const params = new URLSearchParams(bodyText);
+    const email = params.get('email');
+    const password = params.get('password');
+    const fullName = params.get('fullName');
+    
+    if (!email || !password || !fullName) {
+      errorMsg = 'Semua field (Nama, Email, Password) wajib diisi.';
+    } else {
+      // 1. Create user in Supabase Auth using Admin Client
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: email,
+        password: password,
+        email_confirm: true // Auto confirm since it's created by admin
+      });
+
+      if (authError) {
+        errorMsg = 'Gagal membuat akun Auth: ' + authError.message;
+      } else if (authData.user) {
+        // 2. Insert into public.profiles
+        const { error: profileError } = await supabaseAdmin
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            full_name: fullName,
+            role: 'it_staff'
+          });
+
+        if (profileError) {
+          // Rollback: delete auth user if profile creation fails
+          await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+          errorMsg = 'Gagal menyimpan profil: ' + profileError.message;
+        } else {
+          successMsg = 'Akun IT Staff berhasil ditambahkan!';
+        }
+      }
+    }
+  } catch (e) {
+    errorMsg = 'Terjadi kesalahan sistem saat memproses form.';
+    console.error(e);
+  }
+}
+
+// Fetch all profiles (IT Staff and Super Admin)
+const { data: profiles, error: fetchError } = await supabase
+  .from('profiles')
+  .select('id, full_name, role, phone, created_at')
+  .order('created_at', { ascending: false });
+
+// Group by role for better display
+const superAdmins = profiles?.filter(p => p.role === 'super_admin') || [];
+const itStaffs = profiles?.filter(p => p.role === 'it_staff') || [];
+---
+
+<AdminLayout title="Manajemen Tim IT" activeNav="tim">
+  <div class="max-w-4xl">
+    <p class="text-secondary mb-8">Kelola akses anggota tim IT untuk menangani tiket dan pengajuan sistem.</p>
+
+    <!-- Notification -->
+    {successMsg && (
+      <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-8 flex items-center gap-3 text-green-800 text-sm font-500">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        {successMsg}
+      </div>
+    )}
+    {errorMsg && (
+      <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-8 flex items-center gap-3 text-red-800 text-sm font-500">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        {errorMsg}
+      </div>
+    )}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- List Team -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Super Admin Section -->
+        <div class="bg-white rounded-2xl border border-border overflow-hidden">
+          <div class="bg-primary/5 px-6 py-4 border-b border-border flex items-center justify-between">
+            <h2 class="font-600 text-text-dark text-sm flex items-center gap-2">
+              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+              </svg>
+              Super Admin
+            </h2>
+            <span class="bg-white px-2.5 py-1 rounded-full text-xs font-600 text-secondary border border-border">{superAdmins.length} Akun</span>
+          </div>
+          <div class="divide-y divide-border">
+            {superAdmins.map(admin => (
+              <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <p class="font-600 text-text-dark text-sm">{admin.full_name}</p>
+                  <p class="text-xs text-secondary mt-0.5">ID: {admin.id.substring(0, 8)}...</p>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-600 bg-primary/10 text-primary self-start sm:self-auto">
+                  Akses Penuh
+                </span>
+              </div>
+            ))}
+            {superAdmins.length === 0 && (
+              <div class="px-6 py-8 text-center text-secondary text-sm">Tidak ada Super Admin.</div>
+            )}
+          </div>
+        </div>
+
+        <!-- IT Staff Section -->
+        <div class="bg-white rounded-2xl border border-border overflow-hidden">
+          <div class="bg-gray-50 px-6 py-4 border-b border-border flex items-center justify-between">
+            <h2 class="font-600 text-text-dark text-sm flex items-center gap-2">
+              <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+              IT Staff
+            </h2>
+            <span class="bg-white px-2.5 py-1 rounded-full text-xs font-600 text-secondary border border-border">{itStaffs.length} Akun</span>
+          </div>
+          <div class="divide-y divide-border">
+            {itStaffs.map(staff => (
+              <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <p class="font-600 text-text-dark text-sm">{staff.full_name}</p>
+                  <p class="text-xs text-secondary mt-0.5">Bergabung: {new Date(staff.created_at).toLocaleDateString('id-ID')}</p>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-600 bg-gray-100 text-gray-700 self-start sm:self-auto border border-border">
+                  Agen Support
+                </span>
+              </div>
+            ))}
+            {itStaffs.length === 0 && (
+              <div class="px-6 py-8 text-center text-secondary text-sm">Belum ada akun IT Staff yang didaftarkan.</div>
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Add New Staff Form -->
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-2xl border border-border p-6 sticky top-8">
+          <div class="mb-6">
+            <h2 class="text-lg font-700 text-text-dark">Tambah Anggota</h2>
+            <p class="text-sm text-secondary mt-1">Daftarkan akun IT Staff baru agar mereka bisa login dan merespons tiket.</p>
+          </div>
+
+          <form method="POST" class="space-y-4">
+            <div>
+              <label for="fullName" class="block text-xs font-600 text-text-dark mb-1.5 uppercase tracking-wide">Nama Lengkap</label>
+              <input
+                type="text" id="fullName" name="fullName" required
+                placeholder="Cth: Budi Santoso"
+                class="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-secondary-light"
+              />
+            </div>
+            <div>
+              <label for="email" class="block text-xs font-600 text-text-dark mb-1.5 uppercase tracking-wide">Alamat Email</label>
+              <input
+                type="email" id="email" name="email" required
+                placeholder="budi@perusahaan.com"
+                class="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-secondary-light"
+              />
+            </div>
+            <div>
+              <label for="password" class="block text-xs font-600 text-text-dark mb-1.5 uppercase tracking-wide">Password Sementara</label>
+              <input
+                type="text" id="password" name="password" required
+                placeholder="Minimal 6 karakter"
+                class="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-secondary-light"
+              />
+              <p class="text-[11px] text-secondary mt-1.5 leading-tight">Berikan password ini ke staff bersangkutan secara langsung.</p>
+            </div>
+
+            <button type="submit" class="w-full mt-4 bg-primary text-white font-600 py-3 rounded-xl hover:bg-primary-hover transition-colors text-sm flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Daftarkan Akun
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</AdminLayout>

@@ -11,3 +11,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
