@@ -1,0 +1,10 @@
+---
+import { supabase } from '../../lib/supabase';
+
+await supabase.auth.signOut();
+
+const response = Astro.redirect('/admin/login');
+response.headers.append('Set-Cookie', 'sb-access-token=; Path=/; Max-Age=0');
+response.headers.append('Set-Cookie', 'sb-refresh-token=; Path=/; Max-Age=0');
+return response;
+---

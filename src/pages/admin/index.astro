@@ -1,0 +1,194 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch stats
+const [
+  { count: openSupport },
+  { count: allSupport },
+  { count: reviewingReq },
+  { count: allReq },
+] = await Promise.all([
+  supabase.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'open'),
+  supabase.from('support_tickets').select('*', { count: 'exact', head: true }),
+  supabase.from('feature_requests').select('*', { count: 'exact', head: true }).eq('status', 'reviewing'),
+  supabase.from('feature_requests').select('*', { count: 'exact', head: true }),
+]);
+
+// Fetch recent tickets needing action (open + SLA critical)
+const { data: urgentTickets } = await supabase
+  .from('support_tickets')
+  .select('ticket_code, reporter_name, reporter_division, category_name, status, created_at')
+  .in('status', ['open', 'assigned'])
+  .order('created_at', { ascending: true })
+  .limit(5);
+
+// Fetch recent feature requests
+const { data: recentRequests } = await supabase
+  .from('feature_requests')
+  .select('ticket_code, requester_name, requester_division, title, user_priority, status, created_at')
+  .order('created_at', { ascending: false })
+  .limit(5);
+
+function getSLAStatus(createdAt: string) {
+  const diffMs = Date.now() - new Date(createdAt).getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  if (diffHours >= 2) return 'overdue';
+  if (diffHours >= 1.5) return 'warning';
+  return 'ok';
+}
+
+function formatRelative(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins} menit lalu`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} jam lalu`;
+  return `${Math.floor(hrs / 24)} hari lalu`;
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  open: 'Menunggu', assigned: 'Ditugaskan', in_progress: 'Dikerjakan',
+  resolved: 'Selesai', closed: 'Closed', reviewing: 'Ditinjau',
+  approved: 'Disetujui', in_progress_req: 'Dikerjakan', done: 'Done', rejected: 'Ditolak',
+};
+const PRIORITY_CLASS: Record<string, string> = { low: 'badge-low', medium: 'badge-medium', high: 'badge-high' };
+---
+
+<AdminLayout title="Dashboard" activeNav="dashboard">
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+    <div class="bg-white border border-border rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-secondary text-sm">Tiket Support Masuk</p>
+        <div class="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center">
+          <svg class="w-4.5 h-4.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-700 text-primary">{openSupport ?? '—'}</p>
+      <p class="text-secondary-light text-xs mt-1">Perlu ditangani segera</p>
+    </div>
+
+    <div class="bg-white border border-border rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-secondary text-sm">Total Tiket Support</p>
+        <div class="w-9 h-9 bg-primary/8 rounded-lg flex items-center justify-center">
+          <svg class="w-4.5 h-4.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-700 text-primary">{allSupport ?? '—'}</p>
+      <p class="text-secondary-light text-xs mt-1">Semua waktu</p>
+    </div>
+
+    <div class="bg-white border border-border rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-secondary text-sm">Pengajuan Ditinjau</p>
+        <div class="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center">
+          <svg class="w-4.5 h-4.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-700 text-primary">{reviewingReq ?? '—'}</p>
+      <p class="text-secondary-light text-xs mt-1">Menunggu keputusan IT</p>
+    </div>
+
+    <div class="bg-white border border-border rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-secondary text-sm">Total Pengajuan</p>
+        <div class="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center">
+          <svg class="w-4.5 h-4.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-700 text-primary">{allReq ?? '—'}</p>
+      <p class="text-secondary-light text-xs mt-1">Semua waktu</p>
+    </div>
+  </div>
+
+  <!-- Two-column grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Urgent Support Tickets -->
+    <div class="bg-white border border-border rounded-2xl overflow-hidden">
+      <div class="px-6 py-5 border-b border-border flex items-center justify-between">
+        <div>
+          <h2 class="font-700 text-text-dark text-sm">Tiket Support Menunggu</h2>
+          <p class="text-secondary text-xs mt-0.5">Diurutkan berdasarkan waktu masuk (terlama dulu)</p>
+        </div>
+        <a href="/admin/support" class="text-primary text-xs font-600 hover:underline">Lihat semua →</a>
+      </div>
+
+      {urgentTickets && urgentTickets.length > 0 ? (
+        <div class="divide-y divide-border">
+          {urgentTickets.map((t) => {
+            const sla = getSLAStatus(t.created_at);
+            return (
+              <a href={`/admin/support/${t.ticket_code}`} class="flex items-start gap-4 px-6 py-4 hover:bg-bg transition-colors block">
+                <div class={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                  sla === 'overdue' ? 'bg-red-500' : sla === 'warning' ? 'bg-amber-400' : 'bg-green-400'
+                }`}></div>
+                <div class="flex-1 min-w-0">
+                  <p class="font-600 text-text-dark text-sm truncate">{t.category_name || 'Umum'}</p>
+                  <p class="text-secondary text-xs truncate">{t.reporter_name} · {t.reporter_division}</p>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <span class={`text-xs font-600 px-2 py-0.5 rounded-full ${
+                    sla === 'overdue' ? 'bg-red-50 text-red-700' : sla === 'warning' ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'
+                  }`}>
+                    {sla === 'overdue' ? '⚠ SLA Terlampaui' : sla === 'warning' ? '⏰ Segera Tangani' : '✓ Dalam SLA'}
+                  </span>
+                  <p class="text-secondary-light text-xs mt-1">{formatRelative(t.created_at)}</p>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      ) : (
+        <div class="px-6 py-10 text-center">
+          <p class="text-secondary-light text-sm">Tidak ada tiket yang menunggu 🎉</p>
+        </div>
+      )}
+    </div>
+
+    <!-- Recent Feature Requests -->
+    <div class="bg-white border border-border rounded-2xl overflow-hidden">
+      <div class="px-6 py-5 border-b border-border flex items-center justify-between">
+        <div>
+          <h2 class="font-700 text-text-dark text-sm">Pengajuan Sistem Terbaru</h2>
+          <p class="text-secondary text-xs mt-0.5">5 pengajuan terbaru yang masuk</p>
+        </div>
+        <a href="/admin/pengajuan" class="text-primary text-xs font-600 hover:underline">Lihat semua →</a>
+      </div>
+
+      {recentRequests && recentRequests.length > 0 ? (
+        <div class="divide-y divide-border">
+          {recentRequests.map((r) => (
+            <a href={`/admin/pengajuan/${r.ticket_code}`} class="flex items-start gap-4 px-6 py-4 hover:bg-bg transition-colors block">
+              <div class="flex-1 min-w-0">
+                <p class="font-600 text-text-dark text-sm truncate">{r.title}</p>
+                <p class="text-secondary text-xs truncate">{r.requester_name} · {r.requester_division}</p>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <span class={`text-xs font-600 px-2 py-0.5 rounded-full badge-${r.user_priority}`}>
+                  {r.user_priority === 'high' ? 'Tinggi' : r.user_priority === 'medium' ? 'Sedang' : 'Rendah'}
+                </span>
+                <p class="text-secondary-light text-xs mt-1">{formatRelative(r.created_at)}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div class="px-6 py-10 text-center">
+          <p class="text-secondary-light text-sm">Belum ada pengajuan yang masuk.</p>
+        </div>
+      )}
+    </div>
+
+  </div>
+</AdminLayout>

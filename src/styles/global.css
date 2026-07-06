@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #000e38;
+  --color-primary-hover: #001a60;
+  --color-secondary: #666e88;
+  --color-secondary-light: #9197a8;
+  --color-surface: #ffffff;
+  --color-bg: #f7f8fc;
+  --color-bg-alt: #eef0f5;
+  --color-border: #e2e4ec;
+  --color-text-dark: #111827;
+  --color-text-muted: #6B7280;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text-dark);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Global transition */
+a, button {
+  transition: all 0.2s ease;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary-light);
+}
+
+/* Status badge colors */
+.badge-open { background: #eff6ff; color: #1d4ed8; }
+.badge-assigned { background: #faf5ff; color: #7c3aed; }
+.badge-in-progress { background: #fff7ed; color: #c2410c; }
+.badge-resolved { background: #ecfdf5; color: #065f46; }
+.badge-closed { background: #f0fdf4; color: #15803d; }
+.badge-rejected { background: #fef2f2; color: #b91c1c; }
+.badge-reviewing { background: #fefce8; color: #854d0e; }
+.badge-approved { background: #ecfdf5; color: #065f46; }
+.badge-done { background: #f0fdf4; color: #15803d; }
+.badge-low { background: #f0f9ff; color: #075985; }
+.badge-medium { background: #fff7ed; color: #9a3412; }
+.badge-high { background: #fef2f2; color: #991b1b; }

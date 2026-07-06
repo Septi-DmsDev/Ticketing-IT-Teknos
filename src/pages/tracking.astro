@@ -1,0 +1,294 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const code = Astro.url.searchParams.get('code') || '';
+---
+
+<Layout title="Lacak Tiket" description="Cek status dan progress tiket IT Anda menggunakan kode tiket unik.">
+  <main class="min-h-screen bg-bg">
+    
+    <!-- Header -->
+    <header class="bg-primary">
+      <div class="max-w-3xl mx-auto px-6 py-4 flex items-center gap-4">
+        <a href="/" class="text-white/60 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </a>
+        <div>
+          <p class="text-white font-600 text-sm">Lacak Status Tiket</p>
+          <p class="text-white/50 text-xs">IT Ticketing System</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-3xl mx-auto px-6 py-10">
+
+      <!-- Search Box -->
+      <div class="bg-white border border-border rounded-2xl p-7 mb-8">
+        <h1 class="font-700 text-text-dark text-lg mb-1">Cari Tiket Anda</h1>
+        <p class="text-secondary text-sm mb-5">Masukkan kode tiket yang Anda terima saat mengisi form untuk melihat status terkini.</p>
+        <div class="flex gap-3">
+          <input
+            id="search-code"
+            type="text"
+            value={code}
+            placeholder="Contoh: SUP-2026-A7B2 atau REQ-2026-X9C1"
+            class="flex-1 border border-border rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light placeholder:font-sans"
+          />
+          <button id="search-btn" onclick="searchTicket()" class="bg-primary text-white font-600 text-sm px-5 py-3 rounded-xl hover:bg-primary-hover transition-colors whitespace-nowrap">
+            Lacak
+          </button>
+        </div>
+      </div>
+
+      <!-- Result Area -->
+      <div id="result-area">
+        
+        <!-- Loading State (hidden by default) -->
+        <div id="loading-state" class="hidden bg-white border border-border rounded-2xl p-10 text-center">
+          <div class="w-10 h-10 border-3 border-border border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-secondary text-sm">Mencari tiket...</p>
+        </div>
+
+        <!-- Empty State (default) -->
+        <div id="empty-state" class="bg-white border border-border rounded-2xl p-12 text-center">
+          <div class="w-16 h-16 bg-bg rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <svg class="w-8 h-8 text-secondary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+          <p class="font-600 text-text-dark mb-2">Belum Ada Tiket yang Dicari</p>
+          <p class="text-secondary text-sm">Masukkan kode tiket di kolom pencarian di atas untuk melihat statusnya.</p>
+        </div>
+
+        <!-- Not Found State (hidden) -->
+        <div id="not-found-state" class="hidden bg-white border border-border rounded-2xl p-12 text-center">
+          <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <p class="font-600 text-text-dark mb-2">Tiket Tidak Ditemukan</p>
+          <p class="text-secondary text-sm">Kode tiket yang Anda masukkan tidak ada dalam sistem. Pastikan kode ditulis dengan benar (huruf kapital).</p>
+        </div>
+
+        <!-- Ticket Card (hidden, populated by JS) -->
+        <div id="ticket-card" class="hidden space-y-5">
+          
+          <!-- Ticket Header -->
+          <div class="bg-white border border-border rounded-2xl overflow-hidden">
+            <div class="bg-primary px-7 py-5">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="flex items-center gap-2 mb-2">
+                    <span id="ticket-type-badge" class="text-xs font-600 bg-white/20 text-white px-2.5 py-0.5 rounded-full"></span>
+                  </div>
+                  <h2 id="ticket-title" class="text-white font-700 text-xl"></h2>
+                  <p id="ticket-code-display" class="text-white/60 text-sm font-mono mt-1"></p>
+                </div>
+                <div class="text-right">
+                  <p class="text-white/60 text-xs mb-1">Status</p>
+                  <span id="ticket-status-badge" class="text-xs font-700 px-3 py-1.5 rounded-full bg-white/20 text-white"></span>
+                </div>
+              </div>
+            </div>
+            <div class="px-7 py-5 grid grid-cols-2 md:grid-cols-4 gap-5">
+              <div>
+                <p class="text-secondary text-xs mb-1">Pelapor</p>
+                <p id="ticket-reporter" class="font-600 text-text-dark text-sm"></p>
+              </div>
+              <div>
+                <p class="text-secondary text-xs mb-1">Divisi</p>
+                <p id="ticket-division" class="font-600 text-text-dark text-sm"></p>
+              </div>
+              <div>
+                <p class="text-secondary text-xs mb-1">Dibuat</p>
+                <p id="ticket-created" class="font-600 text-text-dark text-sm"></p>
+              </div>
+              <div>
+                <p class="text-secondary text-xs mb-1">Prioritas</p>
+                <span id="ticket-priority" class="text-xs font-600 px-2 py-0.5 rounded-full"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status Timeline -->
+          <div class="bg-white border border-border rounded-2xl px-7 py-6">
+            <h3 class="font-700 text-text-dark text-sm mb-5">Progress Penanganan</h3>
+            <div id="status-timeline" class="space-y-4"></div>
+          </div>
+
+          <!-- IT Response / Notes -->
+          <div id="it-response-section" class="hidden bg-white border border-border rounded-2xl px-7 py-6">
+            <h3 class="font-700 text-text-dark text-sm mb-3">Catatan dari Tim IT</h3>
+            <div id="it-response-text" class="bg-bg rounded-xl p-4 text-sm text-secondary"></div>
+          </div>
+
+          <!-- Confirm Close Button (only for resolved support tickets) -->
+          <div id="confirm-close-section" class="hidden bg-green-50 border border-green-200 rounded-2xl px-7 py-6">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <p class="font-700 text-green-800 text-sm mb-1">Tim IT telah menyelesaikan perbaikan!</p>
+                <p class="text-green-700 text-sm mb-4">Silakan periksa apakah masalah Anda sudah benar-benar selesai. Jika sudah, konfirmasi di bawah ini agar tiket dapat ditutup secara resmi.</p>
+                <button onclick="confirmResolved()" class="bg-green-600 text-white font-600 text-sm px-6 py-2.5 rounded-xl hover:bg-green-700 transition-colors">
+                  ✓ Konfirmasi Masalah Sudah Beres
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { getTicketByCode, confirmTicketClosed } from '../lib/ticket';
+
+  const STATUS_SUPPORT = ['open', 'assigned', 'in_progress', 'resolved', 'closed'];
+  const STATUS_REQUEST = ['draft', 'reviewing', 'approved', 'in_progress', 'testing', 'done'];
+  const STATUS_LABELS: Record<string, string> = {
+    open: 'Menunggu Diproses', assigned: 'Sudah Ditugaskan', in_progress: 'Sedang Ditangani',
+    resolved: 'Sudah Diperbaiki', closed: 'Selesai', draft: 'Draft',
+    reviewing: 'Sedang Ditinjau', approved: 'Disetujui', testing: 'Testing / UAT',
+    done: 'Selesai', rejected: 'Ditolak',
+  };
+  const PRIORITY_LABELS: Record<string, string> = { low: 'Rendah', medium: 'Sedang', high: 'Tinggi' };
+  const PRIORITY_CLASS: Record<string, string> = { low: 'badge-low', medium: 'badge-medium', high: 'badge-high' };
+
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function showState(state: string) {
+    ['loading-state', 'empty-state', 'not-found-state', 'ticket-card'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('hidden', id !== state);
+    });
+  }
+
+  function renderTimeline(ticket: any) {
+    const type = ticket.ticket_type;
+    const steps = type === 'support' ? STATUS_SUPPORT : STATUS_REQUEST;
+    const currentIdx = steps.indexOf(ticket.status);
+    const container = document.getElementById('status-timeline');
+    if (!container) return;
+    container.innerHTML = steps.map((step, i) => {
+      const done = i <= currentIdx;
+      const active = i === currentIdx;
+      return `
+        <div class="flex items-center gap-4">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-700 ${
+            done ? 'bg-primary text-white' : 'bg-bg border-2 border-border text-secondary-light'
+          } ${active ? 'ring-2 ring-primary/20' : ''}">
+            ${done ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : (i + 1)}
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-${active ? '700' : '500'} ${active ? 'text-primary' : done ? 'text-text-dark' : 'text-secondary-light'}">${STATUS_LABELS[step] || step}</p>
+            ${active ? '<p class="text-xs text-secondary">Status saat ini</p>' : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderTicket(ticket: any) {
+    const type = ticket.ticket_type;
+    // Normalize field names from DB schema
+    const title = ticket.title || ticket.category_name || 'Tiket Support';
+    const reporter = ticket.reporter_name || ticket.requester_name || '-';
+    const division = ticket.reporter_division || ticket.requester_division || '-';
+    const priority = ticket.it_priority || ticket.user_priority || 'medium';
+
+    document.getElementById('ticket-title')!.textContent = title;
+    document.getElementById('ticket-code-display')!.textContent = ticket.ticket_code;
+    document.getElementById('ticket-type-badge')!.textContent = type === 'support' ? '🔧 Tiket Support' : '📋 Pengajuan Sistem';
+    document.getElementById('ticket-status-badge')!.textContent = STATUS_LABELS[ticket.status] || ticket.status;
+    document.getElementById('ticket-reporter')!.textContent = reporter;
+    document.getElementById('ticket-division')!.textContent = division;
+    document.getElementById('ticket-created')!.textContent = formatDate(ticket.created_at);
+
+    const priorityEl = document.getElementById('ticket-priority')!;
+    priorityEl.textContent = PRIORITY_LABELS[priority] || priority;
+    priorityEl.className = `text-xs font-600 px-2 py-0.5 rounded-full ${PRIORITY_CLASS[priority] || ''}`;
+
+    renderTimeline(ticket);
+
+    const responseSection = document.getElementById('it-response-section')!;
+    if (ticket.it_response) {
+      responseSection.classList.remove('hidden');
+      document.getElementById('it-response-text')!.textContent = ticket.it_response;
+    } else {
+      responseSection.classList.add('hidden');
+    }
+
+    const confirmSection = document.getElementById('confirm-close-section')!;
+    if (type === 'support' && ticket.status === 'resolved') {
+      confirmSection.classList.remove('hidden');
+      // Store ticket_code for confirm handler
+      (window as any)._currentTicketCode = ticket.ticket_code;
+    } else {
+      confirmSection.classList.add('hidden');
+    }
+  }
+
+  async function searchTicket() {
+    const input = document.getElementById('search-code') as HTMLInputElement;
+    const code = input.value.trim().toUpperCase();
+    if (!code) { input.focus(); return; }
+
+    // Update URL without reload
+    const url = new URL(window.location.href);
+    url.searchParams.set('code', code);
+    window.history.replaceState(null, '', url.toString());
+
+    showState('loading-state');
+    const ticket = await getTicketByCode(code);
+    if (ticket) {
+      renderTicket(ticket);
+      showState('ticket-card');
+    } else {
+      showState('not-found-state');
+    }
+  }
+
+  async function confirmResolved() {
+    const code = (window as any)._currentTicketCode;
+    if (!code) return;
+
+    const btn = document.querySelector('#confirm-close-section button') as HTMLButtonElement;
+    if (btn) { btn.disabled = true; btn.textContent = 'Memproses...'; }
+
+    const ok = await confirmTicketClosed(code);
+    if (ok) {
+      // Re-fetch updated ticket
+      await searchTicket();
+    } else {
+      alert('Terjadi kesalahan. Silakan coba lagi.');
+      if (btn) { btn.disabled = false; btn.textContent = '✓ Konfirmasi Masalah Sudah Beres'; }
+    }
+  }
+
+  (window as any).searchTicket = searchTicket;
+  (window as any).confirmResolved = confirmResolved;
+
+  document.getElementById('search-code')?.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') searchTicket();
+  });
+
+  // Auto-search if code is provided in URL
+  const urlCode = new URL(window.location.href).searchParams.get('code');
+  if (urlCode) {
+    const input = document.getElementById('search-code') as HTMLInputElement;
+    if (input) input.value = urlCode;
+    searchTicket();
+  }
+</script>

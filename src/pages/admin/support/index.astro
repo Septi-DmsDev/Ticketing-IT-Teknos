@@ -1,0 +1,129 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+const statusFilter = Astro.url.searchParams.get('status') || 'all';
+
+let query = supabase
+  .from('support_tickets')
+  .select('*')
+  .order('created_at', { ascending: true });
+
+if (statusFilter !== 'all') {
+  query = query.eq('status', statusFilter);
+}
+
+const { data: tickets } = await query;
+
+const STATUS_LABELS: Record<string, string> = {
+  open: 'Menunggu', assigned: 'Ditugaskan', in_progress: 'Dikerjakan',
+  resolved: 'Selesai Diperbaiki', closed: 'Closed',
+};
+const STATUS_CLASSES: Record<string, string> = {
+  open: 'badge-open', assigned: 'badge-assigned', in_progress: 'badge-in-progress',
+  resolved: 'badge-resolved', closed: 'badge-closed',
+};
+
+function getSLAHours(createdAt: string) {
+  return ((Date.now() - new Date(createdAt).getTime()) / 3600000).toFixed(1);
+}
+
+function isSLABreached(createdAt: string, status: string) {
+  if (['resolved', 'closed'].includes(status)) return false;
+  return (Date.now() - new Date(createdAt).getTime()) > 2 * 3600000;
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+---
+
+<AdminLayout title="Tiket Support" activeNav="support">
+
+  <!-- Filter Tabs -->
+  <div class="flex items-center gap-2 mb-6 flex-wrap">
+    {['all', 'open', 'assigned', 'in_progress', 'resolved', 'closed'].map(s => (
+      <a
+        href={`/admin/support?status=${s}`}
+        class={`px-4 py-2 rounded-xl text-sm font-500 transition-colors ${
+          statusFilter === s
+            ? 'bg-primary text-white'
+            : 'bg-white border border-border text-secondary hover:text-text-dark hover:border-secondary'
+        }`}
+      >
+        {s === 'all' ? 'Semua' : STATUS_LABELS[s] || s}
+      </a>
+    ))}
+  </div>
+
+  <!-- Tickets Table -->
+  <div class="bg-white border border-border rounded-2xl overflow-hidden">
+    {tickets && tickets.length > 0 ? (
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border bg-bg">
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Kode Tiket</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Pelapor</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Kategori</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Status</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">SLA</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Masuk</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            {tickets.map((t) => (
+              <tr class="hover:bg-bg transition-colors">
+                <td class="px-6 py-4">
+                  <span class="font-mono text-primary text-xs font-700">{t.ticket_code}</span>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="font-600 text-text-dark">{t.reporter_name}</p>
+                  <p class="text-secondary text-xs">{t.reporter_division}</p>
+                </td>
+                <td class="px-6 py-4 text-secondary">{t.category_name || '—'}</td>
+                <td class="px-6 py-4">
+                  <span class={`text-xs font-600 px-2.5 py-1 rounded-full ${STATUS_CLASSES[t.status] || ''}`}>
+                    {STATUS_LABELS[t.status] || t.status}
+                  </span>
+                </td>
+                <td class="px-6 py-4">
+                  {!['resolved', 'closed'].includes(t.status) && (
+                    <span class={`text-xs font-600 px-2 py-0.5 rounded-full ${
+                      isSLABreached(t.created_at, t.status)
+                        ? 'bg-red-50 text-red-700'
+                        : 'bg-green-50 text-green-700'
+                    }`}>
+                      {getSLAHours(t.created_at)}j {isSLABreached(t.created_at, t.status) ? '⚠' : '✓'}
+                    </span>
+                  )}
+                  {['resolved', 'closed'].includes(t.status) && (
+                    <span class="text-secondary-light text-xs">—</span>
+                  )}
+                </td>
+                <td class="px-6 py-4 text-secondary text-xs">{formatDate(t.created_at)}</td>
+                <td class="px-6 py-4">
+                  <a href={`/admin/support/${t.ticket_code}`} class="text-primary text-xs font-600 hover:underline whitespace-nowrap">
+                    Detail →
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <div class="py-16 text-center">
+        <div class="w-14 h-14 bg-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg class="w-7 h-7 text-secondary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+        </div>
+        <p class="font-600 text-text-dark mb-1">Tidak ada tiket</p>
+        <p class="text-secondary text-sm">Belum ada tiket support dengan filter ini.</p>
+      </div>
+    )}
+  </div>
+
+</AdminLayout>

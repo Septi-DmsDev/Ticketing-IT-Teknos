@@ -1,0 +1,230 @@
+---
+// Onboarding Popup Component
+// Muncul di kunjungan pertama, state disimpan ke localStorage
+---
+
+<div id="onboarding-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/60 backdrop-blur-sm" style="display:flex !important">
+  <div id="onboarding-modal" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+    
+    <!-- Header -->
+    <div class="bg-primary px-8 pt-8 pb-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+        </div>
+        <span class="text-white/70 text-sm font-medium tracking-wide uppercase">IT Ticketing System</span>
+      </div>
+
+      <!-- Slide Indicator -->
+      <div class="flex gap-2 mb-1">
+        <div class="slide-dot h-1 rounded-full transition-all duration-300" data-slide="0" style="background:white; width:24px;"></div>
+        <div class="slide-dot h-1 rounded-full transition-all duration-300" data-slide="1" style="background:rgba(255,255,255,0.3); width:16px;"></div>
+      </div>
+    </div>
+
+    <!-- Slide Content -->
+    <div id="slide-container" class="relative overflow-hidden">
+
+      <!-- Slide 1: Pengumuman & Panduan -->
+      <div class="slide" id="slide-0">
+        <div class="px-8 py-7">
+          <h2 id="onboarding-title" class="text-2xl font-700 text-primary mb-1">Selamat Datang! 👋</h2>
+          <p class="text-secondary text-sm mb-6">Sistem ini menggantikan cara lama melaporkan kendala atau meminta fitur baru via chat/telepon.</p>
+          
+          <div class="space-y-4 mb-6">
+            <div class="flex gap-4 p-4 bg-bg rounded-xl border border-border">
+              <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="font-600 text-text-dark text-sm mb-0.5">Kenapa harus pakai sistem ini?</p>
+                <p class="text-secondary text-sm">Setiap laporan atau permintaan akan <strong>tercatat, terurut prioritasnya</strong>, dan mudah dipantau. Tim IT bisa bekerja lebih terorganisir.</p>
+              </div>
+            </div>
+
+            <div class="flex gap-4 p-4 bg-bg rounded-xl border border-border">
+              <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="font-600 text-text-dark text-sm mb-0.5">Cara kerja singkat</p>
+                <div class="flex items-center gap-2 flex-wrap text-sm text-secondary">
+                  <span class="bg-primary text-white text-xs font-500 px-2 py-0.5 rounded">1. Isi Form</span>
+                  <span class="text-secondary-light">→</span>
+                  <span class="bg-primary text-white text-xs font-500 px-2 py-0.5 rounded">2. Dapat Kode Tiket</span>
+                  <span class="text-secondary-light">→</span>
+                  <span class="bg-primary text-white text-xs font-500 px-2 py-0.5 rounded">3. Pantau Progress</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+            <strong>Penting:</strong> Simpan <strong>Kode Tiket</strong> yang Anda dapatkan setelah submit. Kode ini adalah satu-satunya cara untuk melacak status laporan Anda.
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 2: FAQ -->
+      <div class="slide hidden" id="slide-1">
+        <div class="px-8 py-7">
+          <h2 class="text-2xl font-700 text-primary mb-1">Pertanyaan Umum (FAQ)</h2>
+          <p class="text-secondary text-sm mb-5">Bacalah sebelum mengisi form agar tidak ada kebingungan.</p>
+          
+          <div class="space-y-3 max-h-72 overflow-y-auto pr-1">
+            <details class="group border border-border rounded-xl overflow-hidden">
+              <summary class="flex justify-between items-center p-4 cursor-pointer font-500 text-sm text-text-dark hover:bg-bg transition-colors">
+                Apa bedanya "Ajukan Sistem Baru" dan "Lapor Kendala"?
+                <svg class="w-4 h-4 text-secondary group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </summary>
+              <div class="px-4 pb-4 text-sm text-secondary border-t border-border pt-3">
+                <strong>Ajukan Sistem Baru</strong> untuk permintaan fitur, aplikasi, atau sistem yang belum ada (butuh waktu pengembangan). <strong>Lapor Kendala</strong> untuk masalah yang sudah ada dan butuh ditangani segera (jaringan, error, hardware).
+              </div>
+            </details>
+
+            <details class="group border border-border rounded-xl overflow-hidden">
+              <summary class="flex justify-between items-center p-4 cursor-pointer font-500 text-sm text-text-dark hover:bg-bg transition-colors">
+                Berapa lama IT merespons laporan saya?
+                <svg class="w-4 h-4 text-secondary group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </summary>
+              <div class="px-4 pb-4 text-sm text-secondary border-t border-border pt-3">
+                Untuk <strong>Tiket Support</strong> (kendala), tim IT memiliki target SLA <strong>2 jam</strong> untuk merespons dan mulai menangani. Untuk pengajuan fitur/sistem, waktunya lebih fleksibel tergantung kompleksitas.
+              </div>
+            </details>
+
+            <details class="group border border-border rounded-xl overflow-hidden">
+              <summary class="flex justify-between items-center p-4 cursor-pointer font-500 text-sm text-text-dark hover:bg-bg transition-colors">
+                Apakah saya perlu membuat akun?
+                <svg class="w-4 h-4 text-secondary group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </summary>
+              <div class="px-4 pb-4 text-sm text-secondary border-t border-border pt-3">
+                <strong>Tidak perlu</strong>. Cukup isi nama, jabatan, dan divisi Anda langsung di form. Tidak ada proses pendaftaran.
+              </div>
+            </details>
+
+            <details class="group border border-border rounded-xl overflow-hidden">
+              <summary class="flex justify-between items-center p-4 cursor-pointer font-500 text-sm text-text-dark hover:bg-bg transition-colors">
+                Apa itu Kode Tiket dan bagaimana cara menggunakannya?
+                <svg class="w-4 h-4 text-secondary group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </summary>
+              <div class="px-4 pb-4 text-sm text-secondary border-t border-border pt-3">
+                Kode Tiket (contoh: <code class="bg-bg border border-border rounded px-1 font-mono text-primary">SUP-2026-A7B2</code>) adalah ID unik untuk laporan Anda. Gunakan di halaman <strong>"Cek Status Tiket"</strong> untuk memantau perkembangan tanpa perlu login.
+              </div>
+            </details>
+
+            <details class="group border border-border rounded-xl overflow-hidden">
+              <summary class="flex justify-between items-center p-4 cursor-pointer font-500 text-sm text-text-dark hover:bg-bg transition-colors">
+                Apa yang harus saya lakukan saat masalah sudah selesai?
+                <svg class="w-4 h-4 text-secondary group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </summary>
+              <div class="px-4 pb-4 text-sm text-secondary border-t border-border pt-3">
+                Saat IT menandai tiket sebagai <strong>Resolved</strong>, Anda akan mendapat notifikasi WA. Silakan cek dan konfirmasi di halaman tracking bahwa masalah benar-benar sudah selesai agar tiket berstatus <strong>Closed</strong>.
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer Navigasi -->
+    <div class="flex items-center justify-between px-8 py-5 border-t border-border bg-bg">
+      <button id="prev-btn" class="text-secondary text-sm font-500 hover:text-text-dark transition-colors invisible" onclick="prevSlide()">
+        ← Sebelumnya
+      </button>
+      <span id="slide-counter" class="text-secondary-light text-sm">1 / 2</span>
+      <button id="next-btn" class="bg-primary text-white text-sm font-600 px-5 py-2.5 rounded-xl hover:bg-primary-hover transition-colors" onclick="nextSlide()">
+        Selanjutnya →
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'it_ticketing_onboarding_seen';
+  let currentSlide = 0;
+  const totalSlides = 2;
+
+  function initOnboarding() {
+    const seen = localStorage.getItem(STORAGE_KEY);
+    if (seen === 'true') {
+      hideModal();
+    }
+  }
+
+  function hideModal() {
+    const overlay = document.getElementById('onboarding-overlay');
+    if (overlay) {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => { overlay.style.display = 'none'; }, 300);
+    }
+  }
+
+  function goToSlide(index: number) {
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.slide-dot');
+    
+    slides.forEach((s, i) => {
+      (s as HTMLElement).classList.toggle('hidden', i !== index);
+    });
+    dots.forEach((d, i) => {
+      const dot = d as HTMLElement;
+      if (i === index) {
+        dot.style.background = 'white';
+        dot.style.width = '24px';
+      } else {
+        dot.style.background = 'rgba(255,255,255,0.3)';
+        dot.style.width = '16px';
+      }
+    });
+
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const counter = document.getElementById('slide-counter');
+    
+    if (prevBtn) prevBtn.style.visibility = index === 0 ? 'hidden' : 'visible';
+    if (counter) counter.textContent = `${index + 1} / ${totalSlides}`;
+    if (nextBtn) {
+      if (index === totalSlides - 1) {
+        nextBtn.textContent = 'Mulai Sekarang ✓';
+        nextBtn.onclick = () => {
+          localStorage.setItem(STORAGE_KEY, 'true');
+          hideModal();
+        };
+      } else {
+        nextBtn.textContent = 'Selanjutnya →';
+        nextBtn.onclick = () => nextSlide();
+      }
+    }
+    currentSlide = index;
+  }
+
+  function nextSlide() {
+    if (currentSlide < totalSlides - 1) {
+      goToSlide(currentSlide + 1);
+    }
+  }
+
+  function prevSlide() {
+    if (currentSlide > 0) {
+      goToSlide(currentSlide - 1);
+    }
+  }
+
+  // Make functions global for inline onclick
+  (window as any).nextSlide = nextSlide;
+  (window as any).prevSlide = prevSlide;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initOnboarding();
+    goToSlide(0);
+  });
+</script>

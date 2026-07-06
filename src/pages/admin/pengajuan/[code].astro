@@ -1,0 +1,182 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+const { code } = Astro.params;
+
+const { data: req } = await supabase
+  .from('feature_requests')
+  .select('*')
+  .eq('ticket_code', code)
+  .maybeSingle();
+
+if (!req) return Astro.redirect('/admin/pengajuan');
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = form.get('action') as string;
+
+  if (action === 'update_status') {
+    const newStatus = form.get('status') as string;
+    const it_priority = form.get('it_priority') as string | null;
+    const updates: Record<string, unknown> = { status: newStatus };
+    if (it_priority) updates.it_priority = it_priority;
+    await supabase.from('feature_requests').update(updates).eq('ticket_code', code);
+  }
+
+  if (action === 'update_response') {
+    await supabase.from('feature_requests').update({
+      it_response: form.get('it_response') as string,
+      it_notes: form.get('it_notes') as string,
+      it_priority: form.get('it_priority') as string || null,
+    }).eq('ticket_code', code);
+  }
+
+  return Astro.redirect(`/admin/pengajuan/${code}`);
+}
+
+const STATUS_FLOW = ['reviewing', 'approved', 'rejected', 'in_progress', 'testing', 'done'];
+const STATUS_LABELS: Record<string, string> = {
+  reviewing: 'Ditinjau', approved: 'Disetujui', rejected: 'Ditolak',
+  in_progress: 'Sedang Dikerjakan', testing: 'Testing/UAT', done: 'Selesai',
+};
+const PRIORITY_LABELS: Record<string, string> = { low: 'Rendah', medium: 'Sedang', high: 'Tinggi' };
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+---
+
+<AdminLayout title={`Detail Pengajuan — ${code}`} activeNav="pengajuan">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="/admin/pengajuan" class="text-secondary hover:text-text-dark transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <div>
+      <h2 class="font-700 text-text-dark">{req.title}</h2>
+      <p class="text-secondary text-xs font-mono">{req.ticket_code}</p>
+    </div>
+    <span class={`ml-auto text-sm font-700 px-3 py-1.5 rounded-full badge-${req.status}`}>
+      {STATUS_LABELS[req.status] || req.status}
+    </span>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Left: Details -->
+    <div class="lg:col-span-2 space-y-5">
+
+      <!-- Requester Info -->
+      <div class="bg-white border border-border rounded-2xl p-6">
+        <h3 class="font-700 text-text-dark text-sm mb-4">Informasi Pemohon</h3>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <p class="text-secondary text-xs mb-1">Nama</p>
+            <p class="font-600 text-text-dark text-sm">{req.requester_name}</p>
+          </div>
+          <div>
+            <p class="text-secondary text-xs mb-1">Jabatan</p>
+            <p class="font-600 text-text-dark text-sm">{req.requester_position}</p>
+          </div>
+          <div>
+            <p class="text-secondary text-xs mb-1">Divisi</p>
+            <p class="font-600 text-text-dark text-sm">{req.requester_division}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Request Details -->
+      <div class="bg-white border border-border rounded-2xl p-6 space-y-5">
+        <div>
+          <h3 class="font-700 text-text-dark text-sm mb-2">Latar Belakang / Masalah</h3>
+          <p class="text-secondary text-sm leading-relaxed whitespace-pre-wrap">{req.background}</p>
+        </div>
+        <div class="border-t border-border pt-5">
+          <h3 class="font-700 text-text-dark text-sm mb-2">Deskripsi Kebutuhan</h3>
+          <p class="text-secondary text-sm leading-relaxed whitespace-pre-wrap">{req.description}</p>
+        </div>
+        {req.attachment_url && (
+          <div class="border-t border-border pt-4">
+            <a href={req.attachment_url} target="_blank" class="text-primary text-sm font-600 hover:underline flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+              </svg>
+              Lihat Lampiran
+            </a>
+          </div>
+        )}
+      </div>
+
+      <!-- IT Response & Priority Override -->
+      <form method="POST" class="bg-white border border-border rounded-2xl p-6">
+        <input type="hidden" name="action" value="update_response" />
+        <h3 class="font-700 text-text-dark text-sm mb-4">Respons & Override Prioritas</h3>
+        <div class="space-y-4">
+          <div>
+            <label for="it_priority" class="block text-sm font-600 text-text-dark mb-2">
+              Override Prioritas IT
+              <span class="text-secondary font-400 ml-1">(Prioritas user: {PRIORITY_LABELS[req.user_priority]})</span>
+            </label>
+            <select id="it_priority" name="it_priority" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all bg-white appearance-none">
+              <option value="">Ikuti prioritas user ({PRIORITY_LABELS[req.user_priority]})</option>
+              <option value="low" selected={req.it_priority === 'low'}>Rendah</option>
+              <option value="medium" selected={req.it_priority === 'medium'}>Sedang</option>
+              <option value="high" selected={req.it_priority === 'high'}>Tinggi</option>
+            </select>
+          </div>
+          <div>
+            <label for="it_response" class="block text-sm font-600 text-text-dark mb-2">
+              Respons Resmi
+              <span class="text-secondary font-400 ml-1">(Terlihat oleh pemohon)</span>
+            </label>
+            <textarea id="it_response" name="it_response" rows="3" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none">{req.it_response || ''}</textarea>
+          </div>
+          <div>
+            <label for="it_notes" class="block text-sm font-600 text-text-dark mb-2">
+              Catatan Internal IT
+            </label>
+            <textarea id="it_notes" name="it_notes" rows="2" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none">{req.it_notes || ''}</textarea>
+          </div>
+          <div class="flex justify-end">
+            <button type="submit" class="bg-primary text-white font-600 text-sm px-5 py-2.5 rounded-xl hover:bg-primary-hover transition-colors">Simpan</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Right: Actions + Meta -->
+    <div class="space-y-5">
+      <div class="bg-white border border-border rounded-2xl p-6">
+        <h3 class="font-700 text-text-dark text-sm mb-4">Update Status</h3>
+        <form method="POST" class="space-y-2">
+          <input type="hidden" name="action" value="update_status" />
+          {STATUS_FLOW.filter(s => s !== req.status).map(s => (
+            <button
+              type="submit" name="status" value={s}
+              class={`w-full py-2.5 rounded-xl text-sm font-600 border transition-colors text-left px-4 flex items-center gap-2 ${
+                s === 'approved' ? 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100' :
+                s === 'rejected' ? 'border-red-200 bg-red-50 text-red-800 hover:bg-red-100' :
+                'border-border bg-bg text-text-dark hover:bg-border'
+              }`}
+            >
+              {STATUS_LABELS[s] || s}
+            </button>
+          ))}
+        </form>
+      </div>
+
+      <div class="bg-white border border-border rounded-2xl p-6">
+        <h3 class="font-700 text-text-dark text-sm mb-4">Info Pengajuan</h3>
+        <div class="space-y-3 text-xs">
+          <div class="flex justify-between"><p class="text-secondary">Prioritas User</p><span class={`font-700 px-2 py-0.5 rounded-full badge-${req.user_priority}`}>{PRIORITY_LABELS[req.user_priority]}</span></div>
+          {req.it_priority && <div class="flex justify-between"><p class="text-secondary">Override IT</p><span class={`font-700 px-2 py-0.5 rounded-full badge-${req.it_priority}`}>{PRIORITY_LABELS[req.it_priority]}</span></div>}
+          {req.target_date && <div class="flex justify-between"><p class="text-secondary">Target Selesai</p><p class="font-600 text-text-dark">{formatDate(req.target_date)}</p></div>}
+          <div class="flex justify-between pt-2 border-t border-border"><p class="text-secondary">Masuk</p><p class="font-600 text-text-dark">{formatDate(req.created_at)}</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</AdminLayout>

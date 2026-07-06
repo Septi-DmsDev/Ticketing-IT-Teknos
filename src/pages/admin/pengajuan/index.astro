@@ -1,0 +1,114 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+const statusFilter = Astro.url.searchParams.get('status') || 'all';
+
+let query = supabase
+  .from('feature_requests')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+if (statusFilter !== 'all') {
+  query = query.eq('status', statusFilter);
+}
+
+const { data: requests } = await query;
+
+const STATUS_LABELS: Record<string, string> = {
+  reviewing: 'Ditinjau', approved: 'Disetujui', rejected: 'Ditolak',
+  in_progress: 'Dikerjakan', testing: 'Testing', done: 'Selesai',
+};
+const STATUS_CLASSES: Record<string, string> = {
+  reviewing: 'badge-reviewing', approved: 'badge-approved', rejected: 'badge-rejected',
+  in_progress: 'badge-in-progress', testing: 'badge-assigned', done: 'badge-done',
+};
+const PRIORITY_LABELS: Record<string, string> = { low: 'Rendah', medium: 'Sedang', high: 'Tinggi' };
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+---
+
+<AdminLayout title="Pengajuan Sistem" activeNav="pengajuan">
+
+  <!-- Filter Tabs -->
+  <div class="flex items-center gap-2 mb-6 flex-wrap">
+    {['all', 'reviewing', 'approved', 'in_progress', 'testing', 'done', 'rejected'].map(s => (
+      <a
+        href={`/admin/pengajuan?status=${s}`}
+        class={`px-4 py-2 rounded-xl text-sm font-500 transition-colors ${
+          statusFilter === s
+            ? 'bg-primary text-white'
+            : 'bg-white border border-border text-secondary hover:text-text-dark hover:border-secondary'
+        }`}
+      >
+        {s === 'all' ? 'Semua' : STATUS_LABELS[s] || s}
+      </a>
+    ))}
+  </div>
+
+  <!-- Requests Table -->
+  <div class="bg-white border border-border rounded-2xl overflow-hidden">
+    {requests && requests.length > 0 ? (
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border bg-bg">
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Kode</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Judul</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Pemohon</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Prioritas</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Status</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Tanggal</th>
+              <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            {requests.map((r) => (
+              <tr class="hover:bg-bg transition-colors">
+                <td class="px-6 py-4">
+                  <span class="font-mono text-primary text-xs font-700">{r.ticket_code}</span>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="font-600 text-text-dark max-w-xs truncate">{r.title}</p>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="font-600 text-text-dark">{r.requester_name}</p>
+                  <p class="text-secondary text-xs">{r.requester_division}</p>
+                </td>
+                <td class="px-6 py-4">
+                  <span class={`text-xs font-600 px-2.5 py-1 rounded-full ${r.it_priority ? PRIORITY_LABELS[r.it_priority] : ''} badge-${r.it_priority || r.user_priority}`}>
+                    {r.it_priority ? `${PRIORITY_LABELS[r.it_priority]} (IT)` : PRIORITY_LABELS[r.user_priority]}
+                  </span>
+                </td>
+                <td class="px-6 py-4">
+                  <span class={`text-xs font-600 px-2.5 py-1 rounded-full ${STATUS_CLASSES[r.status] || ''}`}>
+                    {STATUS_LABELS[r.status] || r.status}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-secondary text-xs">{formatDate(r.created_at)}</td>
+                <td class="px-6 py-4">
+                  <a href={`/admin/pengajuan/${r.ticket_code}`} class="text-primary text-xs font-600 hover:underline whitespace-nowrap">
+                    Detail →
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <div class="py-16 text-center">
+        <div class="w-14 h-14 bg-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg class="w-7 h-7 text-secondary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+        <p class="font-600 text-text-dark mb-1">Tidak ada pengajuan</p>
+        <p class="text-secondary text-sm">Belum ada pengajuan sistem dengan filter ini.</p>
+      </div>
+    )}
+  </div>
+
+</AdminLayout>

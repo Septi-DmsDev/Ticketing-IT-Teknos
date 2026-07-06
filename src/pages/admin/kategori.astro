@@ -1,0 +1,102 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Handle category CRUD
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = form.get('action') as string;
+
+  if (action === 'add') {
+    const name = (form.get('name') as string).trim();
+    if (name) await supabase.from('categories').insert({ name });
+  }
+  if (action === 'toggle') {
+    const id = form.get('id') as string;
+    const is_active = form.get('is_active') === 'true';
+    await supabase.from('categories').update({ is_active: !is_active }).eq('id', id);
+  }
+  if (action === 'delete') {
+    const id = form.get('id') as string;
+    await supabase.from('categories').delete().eq('id', id);
+  }
+
+  return Astro.redirect('/admin/kategori');
+}
+
+const { data: categories } = await supabase
+  .from('categories')
+  .select('*')
+  .order('created_at', { ascending: true });
+---
+
+<AdminLayout title="Kategori Support" activeNav="kategori">
+
+  <!-- Add Category -->
+  <div class="bg-white border border-border rounded-2xl p-6 mb-6">
+    <h2 class="font-700 text-text-dark text-sm mb-4">Tambah Kategori Baru</h2>
+    <form method="POST" class="flex items-center gap-3">
+      <input type="hidden" name="action" value="add" />
+      <input
+        id="new-category-name"
+        name="name"
+        type="text"
+        required
+        placeholder="Contoh: CCTV & Keamanan"
+        class="flex-1 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light"
+      />
+      <button type="submit" class="bg-primary text-white font-600 text-sm px-5 py-3 rounded-xl hover:bg-primary-hover transition-colors whitespace-nowrap">
+        + Tambah
+      </button>
+    </form>
+  </div>
+
+  <!-- Category List -->
+  <div class="bg-white border border-border rounded-2xl overflow-hidden">
+    <div class="px-6 py-5 border-b border-border">
+      <h2 class="font-700 text-text-dark text-sm">Daftar Kategori</h2>
+      <p class="text-secondary text-xs mt-0.5">Kategori yang dinonaktifkan tidak akan muncul di form publik.</p>
+    </div>
+
+    {categories && categories.length > 0 ? (
+      <div class="divide-y divide-border">
+        {categories.map((cat) => (
+          <div class="flex items-center gap-4 px-6 py-4">
+            <div class={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${cat.is_active ? 'bg-green-500' : 'bg-secondary-light'}`}></div>
+            <p class={`flex-1 text-sm font-500 ${cat.is_active ? 'text-text-dark' : 'text-secondary-light line-through'}`}>
+              {cat.name}
+            </p>
+            <div class="flex items-center gap-2">
+              <!-- Toggle Active/Inactive -->
+              <form method="POST">
+                <input type="hidden" name="action" value="toggle" />
+                <input type="hidden" name="id" value={cat.id} />
+                <input type="hidden" name="is_active" value={cat.is_active.toString()} />
+                <button type="submit" class={`text-xs font-600 px-3 py-1.5 rounded-lg transition-colors ${
+                  cat.is_active
+                    ? 'bg-bg text-secondary hover:bg-border'
+                    : 'bg-green-50 text-green-700 hover:bg-green-100'
+                }`}>
+                  {cat.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                </button>
+              </form>
+              <!-- Delete -->
+              <form method="POST" onsubmit="return confirm('Yakin ingin menghapus kategori ini secara permanen?')">
+                <input type="hidden" name="action" value="delete" />
+                <input type="hidden" name="id" value={cat.id} />
+                <button type="submit" class="text-xs font-600 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
+                  Hapus
+                </button>
+              </form>
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div class="py-12 text-center">
+        <p class="text-secondary text-sm">Belum ada kategori. Tambahkan di atas.</p>
+      </div>
+    )}
+  </div>
+
+</AdminLayout>
