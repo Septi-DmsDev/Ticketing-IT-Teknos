@@ -33,7 +33,7 @@ if (Astro.request.method === 'POST') {
       return response;
     }
   } catch (e) {
-    error = 'Terjadi kesalahan saat memproses data form.';
+    error = e instanceof Error ? e.message : String(e);
     console.error(e);
   }
 }

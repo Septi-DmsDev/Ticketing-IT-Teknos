@@ -82,12 +82,14 @@ const user = Astro.locals.user;
             Kategori Support
           </a>
 
-          <a href="/admin/tim" class={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-500 transition-colors ${activeNav === 'tim' ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white hover:bg-white/8'}`}>
-            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-            </svg>
-            Tim IT
-          </a>
+          {Astro.locals.profile?.role === 'super_admin' && (
+            <a href="/admin/tim" class={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-500 transition-colors ${activeNav === 'tim' ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white hover:bg-white/8'}`}>
+              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+              </svg>
+              Tim IT
+            </a>
+          )}
         </nav>
 
         <!-- User info & Logout -->
@@ -100,7 +102,7 @@ const user = Astro.locals.user;
             </div>
             <div class="overflow-hidden flex-1">
               <p class="text-white text-xs font-600 truncate">{user?.email || 'Admin'}</p>
-              <p class="text-white/40 text-xs">IT Staff</p>
+              <p class="text-white/40 text-xs">{Astro.locals.profile?.role === 'super_admin' ? 'Super Admin' : 'IT Staff'}</p>
             </div>
           </div>
           <a href="/admin/logout" class="flex items-center gap-2 px-3 py-2 text-white/50 hover:text-white text-xs font-500 transition-colors rounded-lg hover:bg-white/8">

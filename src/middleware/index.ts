@@ -27,6 +27,16 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     if (session) {
       // User is authenticated — set user in locals for use in pages
       context.locals.user = session.user;
+      
+      // Fetch role from profiles table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, full_name')
+        .eq('id', session.user.id)
+        .single();
+        
+      context.locals.profile = profile;
+
       return next();
     }
   }
