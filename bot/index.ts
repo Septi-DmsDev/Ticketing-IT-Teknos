@@ -37,7 +37,15 @@ async function connectToWhatsApp() {
       if (shouldReconnect) {
         connectToWhatsApp();
       } else {
-        console.log('[BOT] You are logged out. Please delete auth folder and scan QR again.');
+        console.log('[BOT] You are logged out or session is corrupted. Deleting auth folder to force fresh scan...');
+        try {
+          const fs = await import('fs');
+          fs.rmSync(SESSION_DIR, { recursive: true, force: true });
+          console.log('[BOT] Auth folder deleted. Restarting bot to generate new QR...');
+          setTimeout(connectToWhatsApp, 2000);
+        } catch (err) {
+          console.error('[BOT] Failed to delete auth folder:', err);
+        }
       }
     } else if (connection === 'open') {
       console.log('[BOT] WhatsApp connected successfully!');
