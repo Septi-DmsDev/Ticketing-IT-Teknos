@@ -16,8 +16,8 @@ if (statusFilter !== 'all') {
 const { data: tickets } = await query;
 
 const STATUS_LABELS: Record<string, string> = {
-  open: 'Menunggu', assigned: 'Ditugaskan', in_progress: 'Dikerjakan',
-  resolved: 'Selesai Diperbaiki', closed: 'Closed',
+  open: 'Pending', assigned: 'Diterima', in_progress: 'Sedang Dikerjakan',
+  resolved: 'Sudah Diperbaiki', closed: 'Selesai (Closed)',
 };
 const STATUS_CLASSES: Record<string, string> = {
   open: 'badge-open', assigned: 'badge-assigned', in_progress: 'badge-in-progress',

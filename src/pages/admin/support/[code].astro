@@ -34,8 +34,8 @@ if (Astro.request.method === 'POST') {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  open: 'Menunggu', assigned: 'Ditugaskan', in_progress: 'Sedang Dikerjakan',
-  resolved: 'Sudah Diperbaiki', closed: 'Closed',
+  open: 'Pending', assigned: 'Diterima', in_progress: 'Sedang Dikerjakan',
+  resolved: 'Sudah Diperbaiki', closed: 'Selesai (Closed)',
 };
 const STATUS_FLOW = ['open', 'assigned', 'in_progress', 'resolved'];
 
