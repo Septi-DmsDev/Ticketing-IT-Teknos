@@ -152,7 +152,7 @@ function formatDate(iso: string) {
         <h3 class="font-700 text-text-dark text-sm mb-4">Update Status</h3>
         <form method="POST" class="space-y-2">
           <input type="hidden" name="action" value="update_status" />
-          {['pending', 'approved', 'in_progress', 'completed', 'rejected'].filter(s => s !== req.status).map(s => (
+          {STATUS_FLOW.filter(s => s !== req.status).map(s => (
             <button
               type="submit" name="status" value={s}
               class={`w-full py-2.5 rounded-xl text-sm font-600 border transition-colors text-left px-4 flex items-center gap-2 ${

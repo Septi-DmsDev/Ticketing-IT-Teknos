@@ -258,12 +258,13 @@ import Layout from '../layouts/Layout.astro';
 
       btn.textContent = 'Mengirim Laporan...';
 
+      const rawCategoryId = formData.get('category') as string;
       const result = await submitSupportTicket({
         reporter_name: formData.get('name') as string,
         reporter_position: formData.get('position') as string,
         reporter_division: formData.get('division') as string,
         whatsapp_number: waNumber || undefined,
-        category_id: formData.get('category') as string,
+        category_id: (rawCategoryId && rawCategoryId !== 'other') ? rawCategoryId : undefined,
         category_name: categoryName,
         description: formData.get('description') as string,
         location: formData.get('location') as string || undefined,

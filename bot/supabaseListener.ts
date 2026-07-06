@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
-import { waSocket } from './index.js';
+import * as botIndex from './index.js';
+
+// Use a getter to always read the LIVE value of waSocket from index.ts.
+// A direct `import { waSocket }` would capture the initial value (null) and never update.
+const getWaSocket = () => botIndex.waSocket;
 
 dotenv.config();
 
@@ -34,24 +38,19 @@ async function processQueue() {
 
   while (messageQueue.length > 0) {
     const { jid, text } = messageQueue.shift()!;
+    const waSocket = getWaSocket();
     if (!waSocket) {
-      console.warn('[BOT] waSocket is not ready to send message.');
-      continue;
+      console.warn('[BOT] waSocket is not ready. Requeueing...');
+      messageQueue.unshift({ jid, text }); // put back
+      break;
     }
     try {
-      // Small delay to prevent rate limiting (428 Connection Closed)
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulate typing/presence to warm up the connection to this JID
-      await waSocket.presenceSubscribe(jid).catch(() => {});
-      await waSocket.sendPresenceUpdate('composing', jid).catch(() => {});
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await waSocket.sendPresenceUpdate('paused', jid).catch(() => {});
-
+      // Small delay between messages to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 1200));
       await waSocket.sendMessage(jid, { text });
-      console.log('[BOT] Sent message to %s', jid);
+      console.log(`[BOT] ✅ Message sent to ${jid}`);
     } catch (err) {
-      console.error('[BOT] Failed to send message to %s:', jid, err);
+      console.error(`[BOT] ❌ Failed to send to ${jid}:`, err);
     }
   }
   isSending = false;
@@ -60,6 +59,14 @@ async function processQueue() {
 export function sendWhatsAppMessage(jid: string, text: string) {
   messageQueue.push({ jid, text });
   processQueue();
+}
+
+// Called by index.ts after reconnection to drain any stuck messages
+export function flushPendingMessages() {
+  if (messageQueue.length > 0) {
+    console.log(`[BOT] Flushing ${messageQueue.length} pending message(s) after reconnect...`);
+    processQueue();
+  }
 }
 
 export function startSupabaseListener() {
