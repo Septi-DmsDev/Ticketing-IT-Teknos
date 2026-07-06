@@ -1,6 +1,6 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { supabase, supabaseAdmin } from '../../lib/supabase';
+import { supabaseAdmin as supabase } from '../../lib/supabase';
 
 // Security check: Must be logged in
 const cookieHeader = Astro.request.headers.get('cookie') || '';

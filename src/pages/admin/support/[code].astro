@@ -1,6 +1,6 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabase } from '../../../lib/supabase';
+import { supabaseAdmin as supabase } from '../../../lib/supabase';
 
 const { code } = Astro.params;
 
@@ -140,25 +140,24 @@ function formatDate(iso: string) {
 
     <!-- Right: Actions -->
     <div class="space-y-5">
-
       <!-- Update Status -->
       <div class="bg-white border border-border rounded-2xl p-6">
         <h3 class="font-700 text-text-dark text-sm mb-4">Update Status</h3>
         <form method="POST" class="space-y-3">
           <input type="hidden" name="action" value="update_status" />
-          {STATUS_FLOW.filter(s => s !== ticket.status).map(s => (
+          {['open', 'assigned', 'in_progress', 'resolved', 'closed'].filter(s => s !== ticket.status).map(s => (
             <button
               type="submit"
               name="status"
               value={s}
               class={`w-full py-2.5 rounded-xl text-sm font-600 border transition-colors text-left px-4 flex items-center gap-2 ${
-                s === 'resolved'
+                s === 'resolved' || s === 'closed'
                   ? 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100'
                   : 'border-border bg-bg text-text-dark hover:bg-border'
               }`}
             >
               <span class={`w-2 h-2 rounded-full flex-shrink-0 ${
-                s === 'resolved' ? 'bg-green-500' : s === 'in_progress' ? 'bg-orange-400' : s === 'assigned' ? 'bg-purple-500' : 'bg-blue-400'
+                (s === 'resolved' || s === 'closed') ? 'bg-green-500' : s === 'in_progress' ? 'bg-orange-400' : s === 'assigned' ? 'bg-purple-500' : 'bg-blue-400'
               }`}></span>
               {STATUS_LABELS[s] || s}
             </button>
