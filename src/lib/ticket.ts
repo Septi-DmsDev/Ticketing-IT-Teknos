@@ -184,3 +184,31 @@ export async function getActiveCategories() {
   if (error) return [];
   return data ?? [];
 }
+
+/**
+ * Upload an attachment to Supabase Storage and return the public URL.
+ */
+export async function uploadAttachment(file: File): Promise<string | null> {
+  if (!file || file.size === 0) return null;
+
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+  
+  const { data, error } = await supabase.storage
+    .from('attachments')
+    .upload(`public/${fileName}`, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
+
+  if (error) {
+    console.error('[uploadAttachment]', error);
+    return null;
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from('attachments')
+    .getPublicUrl(data.path);
+
+  return publicUrlData.publicUrl;
+}

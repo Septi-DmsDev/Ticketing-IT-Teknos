@@ -212,20 +212,37 @@ import Layout from '../layouts/Layout.astro';
     const btn = document.getElementById('support-submit-btn') as HTMLButtonElement;
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = 'Mengirim...';
+    btn.textContent = 'Mengupload Screenshot...';
 
     const formData = new FormData(form);
     const categorySelect = document.getElementById('sup-category') as HTMLSelectElement;
-    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+    const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
+    
+    const attachmentFile = formData.get('attachment') as File;
+    let attachment_url: string | undefined = undefined;
+
+    if (attachmentFile && attachmentFile.size > 0) {
+      const url = await uploadAttachment(attachmentFile);
+      if (url) attachment_url = url;
+      else {
+        showError('Gagal mengupload screenshot. Pastikan file valid.');
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        return;
+      }
+    }
+
+    btn.textContent = 'Mengirim Laporan...';
 
     const result = await submitSupportTicket({
       reporter_name: formData.get('name') as string,
       reporter_position: formData.get('position') as string,
       reporter_division: formData.get('division') as string,
       category_id: formData.get('category') as string,
-      category_name: selectedOption?.text || (formData.get('category') as string),
+      category_name: categoryName,
       description: formData.get('description') as string,
       location: formData.get('location') as string || undefined,
+      attachment_url: attachment_url
     });
 
     if (result.success && result.ticket_code) {

@@ -22,7 +22,12 @@ const { title, description = 'Sistem Ticketing IT Internal - Ajukan permintaan s
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <title>{title} | IT Ticketing System</title>
   </head>
-  <body>
-    <slot />
+  <body class="min-h-screen flex flex-col bg-bg text-text-dark bg-grid-pattern relative">
+    <!-- Top Gradient Glow Effect -->
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none z-0"></div>
+    
+    <div class="flex-grow flex flex-col w-full relative z-10">
+      <slot />
+    </div>
   </body>
 </html>

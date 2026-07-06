@@ -160,7 +160,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { submitFeatureRequest } from '../lib/ticket';
+  import { submitFeatureRequest, uploadAttachment } from '../lib/ticket';
 
   function updateFileName(input: HTMLInputElement, labelId: string) {
     const label = document.getElementById(labelId);
@@ -195,9 +195,25 @@ import Layout from '../layouts/Layout.astro';
     const btn = document.getElementById('submit-btn') as HTMLButtonElement;
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = 'Mengirim...';
+    btn.textContent = 'Mengupload Lampiran...';
 
     const formData = new FormData(form);
+    const attachmentFile = formData.get('attachment') as File;
+    let attachment_url: string | undefined = undefined;
+
+    if (attachmentFile && attachmentFile.size > 0) {
+      const url = await uploadAttachment(attachmentFile);
+      if (url) attachment_url = url;
+      else {
+        showError('Gagal mengupload lampiran. Pastikan file valid.');
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        return;
+      }
+    }
+
+    btn.textContent = 'Mengirim Pengajuan...';
+
     const result = await submitFeatureRequest({
       requester_name: formData.get('name') as string,
       requester_position: formData.get('position') as string,
@@ -207,6 +223,7 @@ import Layout from '../layouts/Layout.astro';
       description: formData.get('description') as string,
       user_priority: formData.get('priority') as 'low' | 'medium' | 'high',
       target_date: formData.get('target_date') as string || undefined,
+      attachment_url: attachment_url
     });
 
     if (result.success && result.ticket_code) {
