@@ -118,7 +118,7 @@ import Layout from '../layouts/Layout.astro';
                   <p id="attachment-label" class="text-sm text-secondary">Klik untuk memilih file draf/konsep atau drag & drop</p>
                   <p class="text-xs text-secondary-light">Wajib upload draf pendukung (JPG, PNG, PDF — Maks. 5MB)</p>
                 </div>
-                <input id="req-attachment" name="attachment" type="file" required class="hidden" accept=".jpg,.jpeg,.png,.pdf" onchange="updateFileName(this, 'attachment-label')" />
+                <input id="req-attachment" name="attachment" type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf" />
               </label>
             </div>
 
@@ -190,6 +190,16 @@ import Layout from '../layouts/Layout.astro';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  document.addEventListener('DOMContentLoaded', () => {
+    // Attach event listener for file upload
+    const attachmentInput = document.getElementById('req-attachment') as HTMLInputElement;
+    if (attachmentInput) {
+      attachmentInput.addEventListener('change', function() {
+        updateFileName(this, 'attachment-label');
+      });
+    }
+  });
+
   (window as any).updateFileName = updateFileName;
   (window as any).copyCode = copyCode;
 
@@ -211,6 +221,13 @@ import Layout from '../layouts/Layout.astro';
     try {
       const attachmentFile = formData.get('attachment') as File;
       let attachment_url: string | undefined = undefined;
+
+      if (!attachmentFile || attachmentFile.size === 0) {
+        showError('Wajib mengupload draf konsep atau lampiran.');
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        return;
+      }
 
       if (attachmentFile && attachmentFile.size > 0) {
         const url = await uploadAttachment(attachmentFile);
