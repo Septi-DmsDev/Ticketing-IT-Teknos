@@ -70,7 +70,7 @@
           </div>
 
           <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 mt-3">
-            <strong>Aturan Pengajuan Fitur Baru:</strong> Setiap permintaan sistem atau fitur baru <strong>WAJIB</strong> menyertakan lampiran file berupa draf konsep atau referensi visual.
+            <strong>Aturan Pengajuan & Laporan:</strong> Setiap laporan kendala maupun permintaan sistem baru <strong>WAJIB</strong> menyertakan lampiran file (screenshot error, draf konsep, atau referensi visual).
           </div>
         </div>
       </div>
@@ -98,7 +98,7 @@
                 <svg class="w-4 h-4 text-secondary group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
               </summary>
               <div class="px-4 pb-4 text-sm text-secondary border-t border-border pt-3">
-                Untuk <strong>Lapor Kendala</strong>, file sifatnya opsional. Namun khusus untuk <strong>Ajukan Sistem Baru</strong>, Anda <strong>WAJIB</strong> melampirkan file (Draf konsep, referensi UI, atau file PDF penjabaran ide) sebagai acuan awal tim IT bekerja.
+                <strong>WAJIB.</strong> Untuk <strong>Lapor Kendala</strong>, Anda wajib melampirkan screenshot pesan error atau foto kendala di lapangan. Untuk <strong>Ajukan Sistem Baru</strong>, Anda wajib melampirkan file (Draf konsep, referensi UI, atau file PDF penjabaran ide) sebagai acuan awal tim IT bekerja.
               </div>
             </details>
 
@@ -162,15 +162,11 @@
 </div>
 
 <script>
-  const STORAGE_KEY = 'it_ticketing_onboarding_seen';
   let currentSlide = 0;
   const totalSlides = 2;
 
   function initOnboarding() {
-    const seen = localStorage.getItem(STORAGE_KEY);
-    if (seen === 'true') {
-      hideModal();
-    }
+    // Popup will now always show, removing localStorage check
   }
 
   function hideModal() {
@@ -210,7 +206,6 @@
       if (index === totalSlides - 1) {
         nextBtn.textContent = 'Mulai Sekarang ✓';
         nextBtn.onclick = () => {
-          localStorage.setItem(STORAGE_KEY, 'true');
           hideModal();
         };
       } else {
