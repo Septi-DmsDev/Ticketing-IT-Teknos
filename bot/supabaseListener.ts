@@ -24,17 +24,42 @@ function formatPhone(phone: string) {
   return `${cleaned}@s.whatsapp.net`;
 }
 
-async function sendWhatsAppMessage(jid: string, text: string) {
-  if (!waSocket) {
-    console.warn('[BOT] waSocket is not ready to send message.');
-    return;
+// A simple queue to avoid WhatsApp spam/rate limit disconnects (428 Error)
+const messageQueue: { jid: string, text: string }[] = [];
+let isSending = false;
+
+async function processQueue() {
+  if (isSending || messageQueue.length === 0) return;
+  isSending = true;
+
+  while (messageQueue.length > 0) {
+    const { jid, text } = messageQueue.shift()!;
+    if (!waSocket) {
+      console.warn('[BOT] waSocket is not ready to send message.');
+      continue;
+    }
+    try {
+      // Small delay to prevent rate limiting (428 Connection Closed)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Simulate typing/presence to warm up the connection to this JID
+      await waSocket.presenceSubscribe(jid).catch(() => {});
+      await waSocket.sendPresenceUpdate('composing', jid).catch(() => {});
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await waSocket.sendPresenceUpdate('paused', jid).catch(() => {});
+
+      await waSocket.sendMessage(jid, { text });
+      console.log('[BOT] Sent message to %s', jid);
+    } catch (err) {
+      console.error('[BOT] Failed to send message to %s:', jid, err);
+    }
   }
-  try {
-    await waSocket.sendMessage(jid, { text });
-    console.log('[BOT] Sent message to %s', jid);
-  } catch (err) {
-    console.error('[BOT] Failed to send message to %s:', jid, err);
-  }
+  isSending = false;
+}
+
+export function sendWhatsAppMessage(jid: string, text: string) {
+  messageQueue.push({ jid, text });
+  processQueue();
 }
 
 export function startSupabaseListener() {
