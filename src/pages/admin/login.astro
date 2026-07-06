@@ -13,9 +13,10 @@ if (accessToken) {
 let error = '';
 if (Astro.request.method === 'POST') {
   try {
-    const formData = await Astro.request.formData();
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
+    const bodyText = await Astro.request.text();
+    const params = new URLSearchParams(bodyText);
+    const email = params.get('email') as string;
+    const password = params.get('password') as string;
 
     const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
