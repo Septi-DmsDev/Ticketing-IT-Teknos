@@ -3,6 +3,7 @@ import { Boom } from '@hapi/boom';
 import pino from 'pino';
 import * as dotenv from 'dotenv';
 import qrcode from 'qrcode-terminal';
+import * as fs from 'fs';
 import { startSupabaseListener } from './supabaseListener.js';
 
 dotenv.config();
@@ -19,6 +20,8 @@ async function connectToWhatsApp() {
   const sock = makeWASocket({
     auth: state,
     logger: pino({ level: 'silent' }) as any, // Muted logs back
+    browser: ['IT Ticket Bot', 'Chrome', '1.0.0'],
+    syncFullHistory: false,
   });
 
   waSocket = sock;
@@ -39,7 +42,6 @@ async function connectToWhatsApp() {
       } else {
         console.log('[BOT] You are logged out or session is corrupted. Deleting auth folder to force fresh scan...');
         try {
-          const fs = await import('fs');
           fs.rmSync(SESSION_DIR, { recursive: true, force: true });
           console.log('[BOT] Auth folder deleted. Restarting bot to generate new QR...');
           setTimeout(connectToWhatsApp, 2000);
@@ -48,10 +50,12 @@ async function connectToWhatsApp() {
         }
       }
     } else if (connection === 'open') {
-      console.log('[BOT] WhatsApp connected successfully!');
+      console.log('[BOT] WhatsApp connected successfully! Waiting 3 seconds for session sync...');
       if (!(global as any).isListening) {
-        startSupabaseListener();
-        (global as any).isListening = true;
+        setTimeout(() => {
+          startSupabaseListener();
+          (global as any).isListening = true;
+        }, 3000);
       }
     }
   });
