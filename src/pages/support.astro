@@ -229,6 +229,19 @@ import Layout from '../layouts/Layout.astro';
     });
 
     if (result.success && result.ticket_code) {
+      // Save to localStorage
+      try {
+        const saved = JSON.parse(localStorage.getItem('saved_tickets') || '[]');
+        saved.unshift({ 
+          code: result.ticket_code, 
+          title: 'Support: ' + (selectedOption?.text || formData.get('category')), 
+          date: new Date().toISOString() 
+        });
+        localStorage.setItem('saved_tickets', JSON.stringify(saved.slice(0, 10)));
+      } catch (e) {
+        console.error('Failed to save ticket to localStorage', e);
+      }
+
       const modal = document.getElementById('success-modal');
       const codeEl = document.getElementById('success-ticket-code');
       if (codeEl) codeEl.textContent = result.ticket_code;

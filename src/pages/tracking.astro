@@ -42,6 +42,12 @@ const code = Astro.url.searchParams.get('code') || '';
         </div>
       </div>
 
+      <!-- History Area -->
+      <div id="history-area" class="hidden mb-8">
+        <h2 class="text-sm font-600 text-secondary mb-3">Riwayat Tiket di Perangkat Ini</h2>
+        <div id="history-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
       <!-- Result Area -->
       <div id="result-area">
         
@@ -283,6 +289,28 @@ const code = Astro.url.searchParams.get('code') || '';
   document.getElementById('search-code')?.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter') searchTicket();
   });
+
+  function loadHistory() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('saved_tickets') || '[]');
+      const historyArea = document.getElementById('history-area');
+      const historyList = document.getElementById('history-list');
+      
+      if (saved.length > 0 && historyArea && historyList) {
+        historyArea.classList.remove('hidden');
+        historyList.innerHTML = saved.map((t: any) => `
+          <button onclick="document.getElementById('search-code').value='${t.code}'; searchTicket(); window.scrollTo({top: 0, behavior: 'smooth'});" class="flex flex-col text-left bg-white border border-border rounded-xl p-4 hover:border-primary hover:ring-1 hover:ring-primary/20 transition-all cursor-pointer">
+            <span class="text-xs text-secondary mb-1">${new Date(t.date).toLocaleDateString('id-ID')}</span>
+            <span class="font-600 text-text-dark text-sm truncate w-full">${t.title}</span>
+            <span class="font-mono text-primary text-xs mt-1">${t.code}</span>
+          </button>
+        `).join('');
+      }
+    } catch (e) {}
+  }
+
+  // Load history on init
+  loadHistory();
 
   // Auto-search if code is provided in URL
   const urlCode = new URL(window.location.href).searchParams.get('code');
