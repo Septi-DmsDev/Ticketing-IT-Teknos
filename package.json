@@ -12,7 +12,8 @@
     "astro": "astro",
     "start:bot": "tsx bot/index.ts",
     "dev:all": "concurrently \"npm run dev\" \"npm run start:bot\"",
-    "start": "concurrently \"HOST=0.0.0.0 node ./dist/server/entry.mjs\" \"npm run start:bot\""
+    "start": "concurrently \"HOST=0.0.0.0 node ./dist/server/entry.mjs\" \"npm run start:bot\"",
+    "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@types/pino": "^7.0.4",
     "@types/qrcode-terminal": "^0.12.2",
-    "tsx": "^4.23.0"
+    "tsx": "^4.23.0",
+    "vitest": "^4.1.10"
   }
 }
