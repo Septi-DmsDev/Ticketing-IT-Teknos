@@ -117,7 +117,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
 
 CREATE TRIGGER trg_support_ticket_notification
   AFTER INSERT OR UPDATE ON public.support_tickets
@@ -164,7 +164,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
 
 CREATE TRIGGER trg_feature_request_notification
   AFTER INSERT OR UPDATE ON public.feature_requests
@@ -178,6 +178,7 @@ CREATE TRIGGER trg_feature_request_notification
 CREATE OR REPLACE FUNCTION public.status_label_id(status TEXT)
 RETURNS TEXT AS $$
   SELECT CASE status
+    WHEN 'draft' THEN 'Draft'
     WHEN 'open' THEN 'Terbuka'
     WHEN 'assigned' THEN 'Ditugaskan'
     WHEN 'in_progress' THEN 'Sedang Dikerjakan'
