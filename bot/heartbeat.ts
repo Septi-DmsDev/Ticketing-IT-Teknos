@@ -7,6 +7,7 @@
 import { getSocket, onConnectionStateChange } from './connection.js';
 import type { ConnectionState } from './connection.js';
 import { supabase } from './supabaseClient.js';
+import { getErrorMessage } from './errors.js';
 
 const HEARTBEAT_INTERVAL_MS = 60000;
 const HEARTBEAT_ROW_ID = 'whatsapp-bot';
@@ -14,16 +15,6 @@ const HEARTBEAT_ROW_ID = 'whatsapp-bot';
 // Tracks the most recently emitted connection state so the interval timer
 // below knows whether it's allowed to touch last_heartbeat_at.
 let lastKnownState: ConnectionState | 'unknown' = 'unknown';
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'string') return error;
-  try {
-    return JSON.stringify(error);
-  } catch {
-    return String(error);
-  }
-}
 
 function getWaNumber(): string | null {
   return getSocket()?.user?.id ?? null;
