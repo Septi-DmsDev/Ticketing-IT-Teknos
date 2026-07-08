@@ -23,6 +23,20 @@ export function getSocket(): WASocket | null {
   return currentSocket;
 }
 
+// Post-pairing warm-up gate: after a FRESH QR-code pairing (Baileys'
+// `connection.update` payload sets `isNewLogin === true` only in that case,
+// not on ordinary reconnects using an already-saved session), a burst of
+// automated sends immediately afterward is one of the strongest known
+// WhatsApp bot-detection signals. `warmupUntil` is an epoch-ms deadline;
+// `0` (the initial value) means "not warming up" so a normal startup that
+// reuses an existing valid session is never gated.
+let warmupUntil = 0;
+const WARMUP_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+export function isWarmingUp(): boolean {
+  return Date.now() < warmupUntil;
+}
+
 const stateChangeListeners: Array<(state: ConnectionState) => void> = [];
 
 export function onConnectionStateChange(cb: (state: ConnectionState) => void): void {
@@ -103,6 +117,20 @@ export async function connectToWhatsApp(): Promise<void> {
       const botNumber = sock.user?.id || 'unknown';
       console.log(`[BOT] ✅ WhatsApp connected! Bot is running as: ${botNumber}`);
       console.log(`[BOT] Session folder: ${SESSION_DIR}`);
+
+      if (update.isNewLogin) {
+        // Fresh QR-code pairing just completed (not a routine reconnect using
+        // a saved session) — this is exactly the situation that preceded the
+        // prior suspension incident. Enter a 2-hour warm-up window during
+        // which the dispatcher will skip all automated sending, so the
+        // account doesn't immediately look like a freshly-registered bot
+        // blasting messages to WhatsApp's abuse detection.
+        warmupUntil = Date.now() + WARMUP_MS;
+        console.log(
+          `[BOT] Fresh QR pairing detected (isNewLogin=true). Entering ${WARMUP_MS / 60000}-minute warm-up window before automated sending resumes.`,
+        );
+      }
+
       emitConnectionState('connected');
     }
   });
