@@ -11,8 +11,8 @@ Sistem ini didesain agar **tidak mewajibkan karyawan/pelapor untuk login** saat 
 - **Frontend**: Astro.js (Dipilih karena performanya yang sangat ringan, mulus, dan cocok untuk interaktivitas form/UI).
 - **Styling**: Tailwind CSS.
 - **Backend & Database**: Supabase (PostgreSQL untuk database relasional, Supabase Auth untuk manajemen sesi tim IT, Supabase Storage untuk upload lampiran dokumen/foto).
-- **Notifikasi**: Baileys (Library WhatsApp Web.js berbasis Node.js) untuk mengirimkan notifikasi progres/alert ke WhatsApp pelapor maupun grup/tim IT.
-- **Hosting/Deployment**: Self-hosted menggunakan **Coolify** di VPS/Server Kantor. Ini adalah arsitektur yang sangat ideal karena Astro.js (Web) dan bot Baileys (yang mensyaratkan *long-running process*) dapat dideploy berdampingan secara terus-menerus tanpa terkendala *serverless timeout limit*.
+- **Notifikasi**: Tidak menjadi bagian dari scope awal. Fokus sistem pada pelacakan tiket melalui dashboard admin dan halaman tracking.
+- **Hosting/Deployment**: Self-hosted menggunakan **Coolify** di VPS/Server Kantor untuk aplikasi web Astro.js dan layanan pendukung inti yang benar-benar dibutuhkan sistem.
 
 ## 3. UI/UX & Identitas Visual
 Antarmuka difokuskan pada kesan profesional, *clean*, dan natural (menjauhi nuansa template generik atau hasil *generate* AI):

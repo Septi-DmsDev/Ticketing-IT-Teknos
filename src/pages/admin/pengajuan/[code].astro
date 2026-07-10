@@ -1,6 +1,7 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabaseAdmin as supabase } from '../../../lib/supabase';
+import { supabaseAdmin as supabase } from '../../../lib/supabase-admin';
+import { canTransitionFeatureRequestStatus, isValidFeatureRequestStatus } from '../../../lib/status-flow';
 
 const { code } = Astro.params;
 
@@ -12,27 +13,39 @@ const { data: req } = await supabase
 
 if (!req) return Astro.redirect('/admin/pengajuan');
 
+let errorMsg = '';
+let successMsg = '';
+
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const action = form.get('action') as string;
 
   if (action === 'update_status') {
-    const newStatus = form.get('status') as string;
+    const newStatus = String(form.get('status') || '');
     const it_priority = form.get('it_priority') as string | null;
-    const updates: Record<string, unknown> = { status: newStatus };
-    if (it_priority) updates.it_priority = it_priority;
-    await supabase.from('feature_requests').update(updates).eq('ticket_code', code);
+
+    if (!isValidFeatureRequestStatus(req.status) || !isValidFeatureRequestStatus(newStatus)) {
+      errorMsg = 'Status pengajuan tidak valid.';
+    } else if (!canTransitionFeatureRequestStatus(req.status, newStatus)) {
+      errorMsg = 'Perpindahan status pengajuan tidak diizinkan.';
+    } else {
+      const updates: Record<string, unknown> = { status: newStatus };
+      if (it_priority) updates.it_priority = it_priority;
+      const { error } = await supabase.from('feature_requests').update(updates).eq('ticket_code', code);
+      if (error) errorMsg = error.message;
+      else successMsg = 'Status pengajuan berhasil diperbarui.';
+    }
   }
 
   if (action === 'update_response') {
-    await supabase.from('feature_requests').update({
+    const { error } = await supabase.from('feature_requests').update({
       it_response: form.get('it_response') as string,
       it_notes: form.get('it_notes') as string,
       it_priority: form.get('it_priority') as string || null,
     }).eq('ticket_code', code);
+    if (error) errorMsg = error.message;
+    else successMsg = 'Respons pengajuan berhasil disimpan.';
   }
-
-  return Astro.redirect(`/admin/pengajuan/${code}`);
 }
 
 const STATUS_FLOW = ['reviewing', 'approved', 'rejected', 'in_progress', 'testing', 'done'];
@@ -48,6 +61,9 @@ function formatDate(iso: string) {
 ---
 
 <AdminLayout title={`Detail Pengajuan — ${code}`} activeNav="pengajuan">
+  {successMsg && <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 text-sm text-green-800">{successMsg}</div>}
+  {errorMsg && <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-sm text-red-800">{errorMsg}</div>}
+
   <div class="flex items-center gap-3 mb-6">
     <a href="/admin/pengajuan" class="text-secondary hover:text-text-dark transition-colors">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

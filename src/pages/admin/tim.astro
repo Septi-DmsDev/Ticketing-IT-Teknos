@@ -1,14 +1,6 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { supabaseAdmin as supabase } from '../../lib/supabase';
-
-// Security check: Must be logged in
-const cookieHeader = Astro.request.headers.get('cookie') || '';
-const accessToken = cookieHeader.match(/sb-access-token=([^;]*)/)?.[1];
-if (!accessToken) return Astro.redirect('/admin/login');
-
-const { data: { user } } = await supabase.auth.getUser(accessToken);
-if (!user) return Astro.redirect('/admin/login');
+import { supabaseAdmin } from '../../lib/supabase-admin';
 
 const profile = Astro.locals.profile;
 if (profile?.role !== 'super_admin') {
@@ -65,7 +57,7 @@ if (Astro.request.method === 'POST') {
 }
 
 // Fetch all profiles (IT Staff and Super Admin)
-const { data: profiles, error: fetchError } = await supabase
+const { data: profiles, error: fetchError } = await supabaseAdmin
   .from('profiles')
   .select('id, full_name, role, phone, created_at')
   .order('created_at', { ascending: false });

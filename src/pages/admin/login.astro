@@ -2,13 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { supabase } from '../../lib/supabase';
 
-// Redirect to dashboard if already logged in
-const cookieHeader = Astro.request.headers.get('cookie') || '';
-const accessToken = cookieHeader.match(/sb-access-token=([^;]*)/)?.[1];
-if (accessToken) {
-  const { data: { user } } = await supabase.auth.getUser(accessToken);
-  if (user) return Astro.redirect('/admin');
-}
+const isSecureCookie = import.meta.env.PROD;
 
 let error = '';
 if (Astro.request.method === 'POST') {
@@ -23,8 +17,8 @@ if (Astro.request.method === 'POST') {
     if (authError) {
       error = 'Email atau password salah. Silakan coba lagi.';
     } else if (data.session) {
-      Astro.cookies.set('sb-access-token', data.session.access_token, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 3600 });
-      Astro.cookies.set('sb-refresh-token', data.session.refresh_token, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 604800 });
+      Astro.cookies.set('sb-access-token', data.session.access_token, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 3600, secure: isSecureCookie });
+      Astro.cookies.set('sb-refresh-token', data.session.refresh_token, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 604800, secure: isSecureCookie });
       return Astro.redirect('/admin');
     }
   } catch (e) {

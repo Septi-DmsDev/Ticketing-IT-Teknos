@@ -1,6 +1,6 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabaseAdmin as supabase } from '../../../lib/supabase';
+import { supabaseAdmin as supabase } from '../../../lib/supabase-admin';
 
 const statusFilter = Astro.url.searchParams.get('status') || 'all';
 

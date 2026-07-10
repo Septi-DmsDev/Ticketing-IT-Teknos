@@ -31,7 +31,7 @@ import Layout from '../layouts/Layout.astro';
         </div>
         <div>
           <p class="font-600 text-text-dark text-sm mb-1">SLA Respons: Maks. 2 Jam</p>
-          <p class="text-secondary text-sm">Setelah tiket masuk, tim IT berkomitmen untuk memberikan respons pertama dalam waktu 2 jam kerja. Notifikasi update akan dikirim ke WhatsApp Anda (jika diisi).</p>
+          <p class="text-secondary text-sm">Setelah tiket masuk, tim IT berkomitmen untuk memberikan respons pertama dalam waktu 2 jam kerja. Gunakan kode tiket untuk memantau progres penanganan secara berkala.</p>
         </div>
       </div>
 
@@ -58,8 +58,8 @@ import Layout from '../layouts/Layout.astro';
               <input id="sup-division" name="division" type="text" required placeholder="Contoh: Operasional" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light" />
             </div>
             <div class="md:col-span-2">
-              <label for="sup-whatsapp" class="block text-sm font-600 text-text-dark mb-2">Nomor WhatsApp <span class="text-red-500">*</span></label>
-              <input id="sup-whatsapp" name="whatsapp" type="tel" required placeholder="Contoh: 08123456789 (untuk notifikasi status tiket)" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light" />
+              <label for="sup-contact" class="block text-sm font-600 text-text-dark mb-2">Kontak yang Bisa Dihubungi <span class="text-secondary font-400">(Opsional)</span></label>
+              <input id="sup-contact" name="contact" type="text" placeholder="Contoh: ext. 1234 atau email internal" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light" />
             </div>
           </div>
         </section>
@@ -155,7 +155,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { submitSupportTicket, getActiveCategories, uploadAttachment, formatWhatsAppNumber } from '../lib/ticket';
+  import { submitSupportTicket, getActiveCategories, uploadAttachment } from '../lib/ticket';
 
   // Load dynamic categories from Supabase
   async function loadCategories() {
@@ -230,10 +230,6 @@ import Layout from '../layouts/Layout.astro';
     const categorySelect = document.getElementById('sup-category') as HTMLSelectElement;
     const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
     
-    // Format WhatsApp Number
-    const rawWa = formData.get('whatsapp') as string;
-    const waNumber = formatWhatsAppNumber(rawWa);
-    
     try {
       const attachmentFile = formData.get('attachment') as File;
       let attachment_url: string | undefined = undefined;
@@ -263,7 +259,6 @@ import Layout from '../layouts/Layout.astro';
         reporter_name: formData.get('name') as string,
         reporter_position: formData.get('position') as string,
         reporter_division: formData.get('division') as string,
-        whatsapp_number: waNumber || undefined,
         category_id: (rawCategoryId && rawCategoryId !== 'other') ? rawCategoryId : undefined,
         category_name: categoryName,
         description: formData.get('description') as string,

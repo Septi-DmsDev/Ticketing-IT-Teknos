@@ -33,8 +33,5 @@ Panduan ini HANYA berupa instruksi (tidak dieksekusi otomatis oleh *skill* inisi
 2. Eksekusi skema SQL (akan dibuatkan file `.sql` di tahap *coding*).
 3. Atur RLS agar tabel `support_tickets` dan `feature_requests` bisa di-*insert* publik, tapi di-*read/update* oleh *authenticated user* saja.
 
-## Baileys Setup (WA Bot)
-Bot WhatsApp disarankan dibuat pada *entry file* terpisah (misal `bot.js`) atau *service* Node.js tersendiri yang dijalankan via `pm2` / Coolify Nixpacks, agar tidak mengganggu proses `astro build`.
-
 ## What This Skill Did Not Execute
 *Skill* `init-project-operating-system` **TIDAK** menjalankan perintah instalasi NPM apapun, tidak membuat koneksi ke Supabase, dan tidak menjalankan Docker. *Skill* ini murni menyiapkan dokumentasi protokol.

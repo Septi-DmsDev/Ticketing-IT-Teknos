@@ -10,7 +10,6 @@ export interface SupportTicketPayload {
   reporter_name: string;
   reporter_position: string;
   reporter_division: string;
-  whatsapp_number?: string;
   category_id: string;
   category_name: string;
   description: string;
@@ -22,7 +21,6 @@ export interface FeatureRequestPayload {
   requester_name: string;
   requester_position: string;
   requester_division: string;
-  whatsapp_number?: string;
   title: string;
   background: string;
   description: string;
@@ -40,20 +38,6 @@ export interface TicketResult {
 // =========================================================
 // Helpers
 // =========================================================
-
-/**
- * Format string to a valid WhatsApp number (e.g. 628...)
- */
-export function formatWhatsAppNumber(phone: string): string {
-  if (!phone) return '';
-  // Remove all non-numeric characters
-  let cleaned = phone.replace(/\D/g, '');
-  // Convert leading 0 to 62
-  if (cleaned.startsWith('0')) {
-    cleaned = '62' + cleaned.substring(1);
-  }
-  return cleaned;
-}
 
 /**
  * Generate a unique ticket code.
@@ -91,7 +75,6 @@ export async function submitSupportTicket(payload: SupportTicketPayload): Promis
     reporter_name: payload.reporter_name,
     reporter_position: payload.reporter_position,
     reporter_division: payload.reporter_division,
-    whatsapp_number: payload.whatsapp_number || null,
     category_id: payload.category_id || null,
     category_name: payload.category_name,
     description: payload.description,
@@ -127,7 +110,6 @@ export async function submitFeatureRequest(payload: FeatureRequestPayload): Prom
     requester_name: payload.requester_name,
     requester_position: payload.requester_position,
     requester_division: payload.requester_division,
-    whatsapp_number: payload.whatsapp_number || null,
     title: payload.title,
     background: payload.background,
     description: payload.description,
@@ -155,39 +137,28 @@ export async function submitFeatureRequest(payload: FeatureRequestPayload): Prom
 export async function getTicketByCode(code: string) {
   const upperCode = code.trim().toUpperCase();
 
-  if (upperCode.startsWith('SUP-')) {
-    const { data, error } = await supabase
-      .from('support_tickets')
-      .select('*')
-      .eq('ticket_code', upperCode)
-      .maybeSingle();
-    if (error || !data) return null;
-    return { ...data, ticket_type: 'support' as TicketType };
+  if (!upperCode.startsWith('SUP-') && !upperCode.startsWith('REQ-')) {
+    return null;
   }
 
-  if (upperCode.startsWith('REQ-')) {
-    const { data, error } = await supabase
-      .from('feature_requests')
-      .select('*')
-      .eq('ticket_code', upperCode)
-      .maybeSingle();
-    if (error || !data) return null;
-    return { ...data, ticket_type: 'request' as TicketType };
-  }
+  const { data, error } = await supabase.rpc('get_public_ticket_by_code', {
+    input_code: upperCode,
+  });
 
-  return null;
+  if (error || !data) return null;
+  return data;
 }
 
 /**
  * Confirm a support ticket as closed by the reporter.
  */
 export async function confirmTicketClosed(ticket_code: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('support_tickets')
-    .update({ status: 'closed', closed_at: new Date().toISOString() })
-    .eq('ticket_code', ticket_code)
-    .eq('status', 'resolved'); // Only allow closing if currently resolved
-  return !error;
+  const { data, error } = await supabase.rpc('confirm_ticket_closed_public', {
+    input_code: ticket_code,
+  });
+
+  if (error) return false;
+  return data === true;
 }
 
 /**

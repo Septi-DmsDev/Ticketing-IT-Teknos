@@ -1,7 +1,7 @@
 # WhatsApp Notification Bot — Design Spec
 
 **Tanggal:** 2026-07-06  
-**Status:** Approved  
+**Status:** Superseded — pendekatan in-memory retry + dependency-injection ini terbukti tidak menyelesaikan masalah (notifikasi tetap tidak bekerja sama sekali). Digantikan oleh `docs/superpowers/specs/2026-07-06-whatsapp-notification-rebuild-design.md` (arsitektur durable outbox di Postgres).
 **Author:** Agent + Septian  
 
 ---

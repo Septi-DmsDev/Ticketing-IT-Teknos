@@ -1,8 +1,8 @@
 # WhatsApp Notification Bot — Implementation Plan
 
 **Tanggal:** 2026-07-06
-**Spec:** `docs/superpowers/specs/2026-07-06-wa-notification-bot-design.md`
-**Status:** Draft
+**Spec:** `docs/superpowers/specs/2026-07-06-wa-notification-bot-design.md` (superseded)
+**Status:** Superseded — dieksekusi sebagian (Task 2/3 mendarat sebagai getter fix langsung di `bot/supabaseListener.ts`, `bot/notifier.ts` di Task 1 tidak pernah dibuat), dan hasilnya tetap tidak membuat notifikasi bekerja. Digantikan oleh `docs/superpowers/plans/2026-07-06-whatsapp-notification-rebuild-plan.md`.
 
 ---
 

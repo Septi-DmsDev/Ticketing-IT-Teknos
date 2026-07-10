@@ -1,6 +1,7 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabaseAdmin as supabase } from '../../../lib/supabase';
+import { supabaseAdmin as supabase } from '../../../lib/supabase-admin';
+import { canTransitionSupportStatus, isValidSupportStatus } from '../../../lib/status-flow';
 
 const { code } = Astro.params;
 
@@ -10,7 +11,27 @@ const { data: ticket } = await supabase
   .eq('ticket_code', code)
   .maybeSingle();
 
+const { data: itStaffOptions } = await supabase
+  .from('profiles')
+  .select('id, full_name, role')
+  .in('role', ['super_admin', 'it_staff'])
+  .order('full_name', { ascending: true });
+
 if (!ticket) return Astro.redirect('/admin/support');
+
+let errorMsg = '';
+let successMsg = '';
+
+const URGENCY_LABELS: Record<string, string> = {
+  normal: 'Normal',
+  urgent: 'Urgent',
+  critical: 'Critical',
+};
+const URGENCY_CLASSES: Record<string, string> = {
+  normal: 'bg-slate-100 text-slate-700',
+  urgent: 'bg-amber-100 text-amber-800',
+  critical: 'bg-red-100 text-red-800',
+};
 
 // Handle status update / note update POST
 if (Astro.request.method === 'POST') {
@@ -18,19 +39,52 @@ if (Astro.request.method === 'POST') {
   const action = form.get('action') as string;
 
   if (action === 'update_status') {
-    const newStatus = form.get('status') as string;
-    const updates: Record<string, unknown> = { status: newStatus };
-    if (newStatus === 'resolved') updates.resolved_at = new Date().toISOString();
-    await supabase.from('support_tickets').update(updates).eq('ticket_code', code);
+    const newStatus = String(form.get('status') || '');
+
+    if (!isValidSupportStatus(ticket.status) || !isValidSupportStatus(newStatus)) {
+      errorMsg = 'Status tiket tidak valid.';
+    } else if (!canTransitionSupportStatus(ticket.status, newStatus)) {
+      errorMsg = 'Perpindahan status support tidak diizinkan.';
+    } else {
+      const updates: Record<string, unknown> = { status: newStatus };
+      if (newStatus === 'resolved') updates.resolved_at = new Date().toISOString();
+      const { error } = await supabase.from('support_tickets').update(updates).eq('ticket_code', code);
+      if (error) errorMsg = error.message;
+      else successMsg = 'Status tiket berhasil diperbarui.';
+    }
   }
 
   if (action === 'update_response') {
     const it_response = form.get('it_response') as string;
     const it_notes = form.get('it_notes') as string;
-    await supabase.from('support_tickets').update({ it_response, it_notes }).eq('ticket_code', code);
+    const { error } = await supabase.from('support_tickets').update({ it_response, it_notes }).eq('ticket_code', code);
+    if (error) errorMsg = error.message;
+    else successMsg = 'Respons dan catatan berhasil disimpan.';
   }
 
-  return Astro.redirect(`/admin/support/${code}`);
+  if (action === 'assign_pic') {
+    const assignedTo = String(form.get('assigned_to') || '');
+    const updates: Record<string, unknown> = { assigned_to: assignedTo || null };
+
+    if (assignedTo && ticket.status === 'open') {
+      updates.status = 'assigned';
+    }
+
+    const { error } = await supabase.from('support_tickets').update(updates).eq('ticket_code', code);
+    if (error) errorMsg = error.message;
+    else successMsg = assignedTo ? 'PIC IT berhasil ditetapkan.' : 'Assignment PIC IT berhasil dikosongkan.';
+  }
+
+  if (action === 'update_urgency') {
+    const urgency = String(form.get('urgency') || 'normal');
+    if (!['normal', 'urgent', 'critical'].includes(urgency)) {
+      errorMsg = 'Prioritas urgency tidak valid.';
+    } else {
+      const { error } = await supabase.from('support_tickets').update({ urgency }).eq('ticket_code', code);
+      if (error) errorMsg = error.message;
+      else successMsg = 'Urgency tiket berhasil diperbarui.';
+    }
+  }
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -45,6 +99,9 @@ function formatDate(iso: string) {
 ---
 
 <AdminLayout title={`Detail Tiket — ${code}`} activeNav="support">
+  {successMsg && <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 text-sm text-green-800">{successMsg}</div>}
+  {errorMsg && <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-sm text-red-800">{errorMsg}</div>}
+
   <div class="flex items-center gap-3 mb-6">
     <a href="/admin/support" class="text-secondary hover:text-text-dark transition-colors">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,6 +197,42 @@ function formatDate(iso: string) {
 
     <!-- Right: Actions -->
     <div class="space-y-5">
+      <div class="bg-white border border-border rounded-2xl p-6">
+        <h3 class="font-700 text-text-dark text-sm mb-4">Tentukan PIC IT</h3>
+        <form method="POST" class="space-y-4">
+          <input type="hidden" name="action" value="assign_pic" />
+          <div>
+            <label for="assigned_to" class="block text-sm font-600 text-text-dark mb-2">PIC Penanganan</label>
+            <select id="assigned_to" name="assigned_to" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all bg-white appearance-none">
+              <option value="">Belum ditugaskan</option>
+              {(itStaffOptions || []).map((staff) => (
+                <option value={staff.id} selected={ticket.assigned_to === staff.id}>
+                  {staff.full_name} {staff.role === 'super_admin' ? '(Super Admin)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" class="w-full bg-primary text-white font-600 text-sm px-5 py-2.5 rounded-xl hover:bg-primary-hover transition-colors">
+            Simpan PIC
+          </button>
+        </form>
+      </div>
+
+      <div class="bg-white border border-border rounded-2xl p-6">
+        <h3 class="font-700 text-text-dark text-sm mb-4">Atur Urgency</h3>
+        <form method="POST" class="space-y-4">
+          <input type="hidden" name="action" value="update_urgency" />
+          <select name="urgency" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all bg-white appearance-none">
+            <option value="normal" selected={ticket.urgency === 'normal'}>Normal</option>
+            <option value="urgent" selected={ticket.urgency === 'urgent'}>Urgent</option>
+            <option value="critical" selected={ticket.urgency === 'critical'}>Critical</option>
+          </select>
+          <button type="submit" class="w-full bg-primary text-white font-600 text-sm px-5 py-2.5 rounded-xl hover:bg-primary-hover transition-colors">
+            Simpan Urgency
+          </button>
+        </form>
+      </div>
+
       <!-- Update Status -->
       <div class="bg-white border border-border rounded-2xl p-6">
         <h3 class="font-700 text-text-dark text-sm mb-4">Update Status</h3>
@@ -176,6 +269,16 @@ function formatDate(iso: string) {
           <div class="flex justify-between">
             <p class="text-secondary text-xs">Masuk</p>
             <p class="font-600 text-text-dark text-xs">{formatDate(ticket.created_at)}</p>
+          </div>
+          <div class="flex justify-between">
+            <p class="text-secondary text-xs">PIC IT</p>
+            <p class="font-600 text-text-dark text-xs">{itStaffOptions?.find((staff) => staff.id === ticket.assigned_to)?.full_name || 'Belum ditugaskan'}</p>
+          </div>
+          <div class="flex justify-between items-center">
+            <p class="text-secondary text-xs">Urgency</p>
+            <span class={`text-[11px] font-700 px-2 py-0.5 rounded-full ${URGENCY_CLASSES[ticket.urgency] || URGENCY_CLASSES.normal}`}>
+              {URGENCY_LABELS[ticket.urgency] || ticket.urgency}
+            </span>
           </div>
           {ticket.resolved_at && (
             <div class="flex justify-between">
