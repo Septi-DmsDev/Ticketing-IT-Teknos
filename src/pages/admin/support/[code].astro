@@ -119,15 +119,15 @@ function formatDate(iso: string) {
     </div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
     <!-- Left: Details -->
     <div class="lg:col-span-2 space-y-5">
 
       <!-- Reporter Info -->
-      <div class="bg-white border border-border rounded-2xl p-6">
+      <div class="bg-white border border-border rounded-2xl p-5 sm:p-6">
         <h3 class="font-700 text-text-dark text-sm mb-4">Informasi Pelapor</h3>
-        <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <p class="text-secondary text-xs mb-1">Nama</p>
             <p class="font-600 text-text-dark text-sm">{ticket.reporter_name}</p>
@@ -144,7 +144,7 @@ function formatDate(iso: string) {
       </div>
 
       <!-- Ticket Description -->
-      <div class="bg-white border border-border rounded-2xl p-6">
+      <div class="bg-white border border-border rounded-2xl p-5 sm:p-6">
         <h3 class="font-700 text-text-dark text-sm mb-3">Deskripsi Masalah</h3>
         <p class="text-secondary text-sm leading-relaxed whitespace-pre-wrap">{ticket.description}</p>
         {ticket.location && (
@@ -168,7 +168,7 @@ function formatDate(iso: string) {
       </div>
 
       <!-- IT Response Form -->
-      <form method="POST" class="bg-white border border-border rounded-2xl p-6">
+      <form method="POST" class="bg-white border border-border rounded-2xl p-5 sm:p-6">
         <input type="hidden" name="action" value="update_response" />
         <h3 class="font-700 text-text-dark text-sm mb-4">Respons & Catatan</h3>
         <div class="space-y-4">
@@ -197,7 +197,7 @@ function formatDate(iso: string) {
 
     <!-- Right: Actions -->
     <div class="space-y-5">
-      <div class="bg-white border border-border rounded-2xl p-6">
+      <div class="bg-white border border-border rounded-2xl p-5 sm:p-6">
         <h3 class="font-700 text-text-dark text-sm mb-4">Tentukan PIC IT</h3>
         <form method="POST" class="space-y-4">
           <input type="hidden" name="action" value="assign_pic" />
@@ -218,7 +218,7 @@ function formatDate(iso: string) {
         </form>
       </div>
 
-      <div class="bg-white border border-border rounded-2xl p-6">
+      <div class="bg-white border border-border rounded-2xl p-5 sm:p-6">
         <h3 class="font-700 text-text-dark text-sm mb-4">Atur Urgency</h3>
         <form method="POST" class="space-y-4">
           <input type="hidden" name="action" value="update_urgency" />
@@ -234,7 +234,7 @@ function formatDate(iso: string) {
       </div>
 
       <!-- Update Status -->
-      <div class="bg-white border border-border rounded-2xl p-6">
+      <div class="bg-white border border-border rounded-2xl p-5 sm:p-6">
         <h3 class="font-700 text-text-dark text-sm mb-4">Update Status</h3>
         <form method="POST" class="space-y-3">
           <input type="hidden" name="action" value="update_status" />

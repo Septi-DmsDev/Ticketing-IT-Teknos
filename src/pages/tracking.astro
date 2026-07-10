@@ -9,7 +9,7 @@ const code = Astro.url.searchParams.get('code') || '';
     
     <!-- Header -->
     <header class="bg-primary">
-      <div class="max-w-3xl mx-auto px-6 py-4 flex items-center gap-4">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
         <a href="/" class="text-white/60 hover:text-white transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -22,21 +22,21 @@ const code = Astro.url.searchParams.get('code') || '';
       </div>
     </header>
 
-    <div class="max-w-3xl mx-auto px-6 py-10">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
 
       <!-- Search Box -->
-      <div class="bg-white border border-border rounded-2xl p-7 mb-8">
+      <div class="bg-white border border-border rounded-2xl p-5 sm:p-7 mb-8">
         <h1 class="font-700 text-text-dark text-lg mb-1">Cari Tiket Anda</h1>
         <p class="text-secondary text-sm mb-5">Masukkan kode tiket yang Anda terima saat mengisi form untuk melihat status terkini.</p>
-        <div class="flex gap-3">
+        <div class="flex flex-col sm:flex-row gap-3">
           <input
             id="search-code"
             type="text"
             value={code}
             placeholder="Contoh: SUP-2026-A7B2 atau REQ-2026-X9C1"
-            class="flex-1 border border-border rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light placeholder:font-sans"
+            class="flex-1 min-w-0 border border-border rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light placeholder:font-sans"
           />
-          <button id="search-btn" onclick="searchTicket()" class="bg-primary text-white font-600 text-sm px-5 py-3 rounded-xl hover:bg-primary-hover transition-colors whitespace-nowrap">
+          <button id="search-btn" onclick="searchTicket()" class="w-full sm:w-auto bg-primary text-white font-600 text-sm px-5 py-3 rounded-xl hover:bg-primary-hover transition-colors whitespace-nowrap">
             Lacak
           </button>
         </div>

@@ -26,6 +26,7 @@ html, body {
   color: var(--color-text-dark);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 /* Smooth scrolling */
@@ -89,3 +90,30 @@ a, button {
 .badge-low { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
 .badge-medium { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
 .badge-high { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+img,
+svg,
+video,
+canvas,
+iframe {
+  max-width: 100%;
+}
+
+textarea,
+input,
+select,
+button {
+  font: inherit;
+}
+
+@media (max-width: 640px) {
+  .glass-card {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .hover-lift:hover {
+    transform: none;
+    box-shadow: 0 8px 16px -10px rgba(0, 14, 56, 0.12);
+  }
+}

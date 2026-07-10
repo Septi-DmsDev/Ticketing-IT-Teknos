@@ -3,11 +3,11 @@
 // Muncul di kunjungan pertama, state disimpan ke localStorage
 ---
 
-<div id="onboarding-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/60 backdrop-blur-sm" style="display:flex !important">
-  <div id="onboarding-modal" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+<div id="onboarding-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-primary/60 backdrop-blur-sm" style="display:flex !important">
+  <div id="onboarding-modal" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] overflow-hidden flex flex-col" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
     
     <!-- Header -->
-    <div class="bg-primary px-8 pt-8 pb-6">
+    <div class="bg-primary px-5 sm:px-8 pt-6 sm:pt-8 pb-5 sm:pb-6">
       <div class="flex items-center gap-3 mb-4">
         <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,16 +25,16 @@
     </div>
 
     <!-- Slide Content -->
-    <div id="slide-container" class="relative overflow-hidden">
+    <div id="slide-container" class="relative overflow-y-auto flex-1 min-h-0">
 
       <!-- Slide 1: Pengumuman & Panduan -->
       <div class="slide" id="slide-0">
-        <div class="px-8 py-7">
-          <h2 id="onboarding-title" class="text-2xl font-700 text-primary mb-1">Selamat Datang! 👋</h2>
+        <div class="px-5 sm:px-8 py-6 sm:py-7">
+          <h2 id="onboarding-title" class="text-xl sm:text-2xl font-700 text-primary mb-1">Selamat Datang! 👋</h2>
           <p class="text-secondary text-sm mb-6">Sistem ini menggantikan cara lama melaporkan kendala atau meminta fitur baru via chat/telepon.</p>
           
           <div class="space-y-4 mb-6">
-            <div class="flex gap-4 p-4 bg-bg rounded-xl border border-border">
+            <div class="flex gap-3 sm:gap-4 p-3 sm:p-4 bg-bg rounded-xl border border-border">
               <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
@@ -46,7 +46,7 @@
               </div>
             </div>
 
-            <div class="flex gap-4 p-4 bg-bg rounded-xl border border-border">
+            <div class="flex gap-3 sm:gap-4 p-3 sm:p-4 bg-bg rounded-xl border border-border">
               <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -65,7 +65,7 @@
             </div>
           </div>
 
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 text-sm text-amber-800">
             <strong>Penting:</strong> Simpan <strong>Kode Tiket</strong> yang Anda dapatkan setelah submit. Kode ini adalah satu-satunya cara untuk melacak status laporan Anda.
           </div>
 
@@ -77,8 +77,8 @@
 
       <!-- Slide 2: FAQ -->
       <div class="slide hidden" id="slide-1">
-        <div class="px-8 py-7">
-          <h2 class="text-2xl font-700 text-primary mb-1">Pertanyaan Umum (FAQ)</h2>
+        <div class="px-5 sm:px-8 py-6 sm:py-7">
+          <h2 class="text-xl sm:text-2xl font-700 text-primary mb-1">Pertanyaan Umum (FAQ)</h2>
           <p class="text-secondary text-sm mb-5">Bacalah sebelum mengisi form agar tidak ada kebingungan.</p>
           
           <div class="space-y-3 max-h-72 overflow-y-auto pr-1">
@@ -148,12 +148,12 @@
     </div>
 
     <!-- Footer Navigasi -->
-    <div class="flex items-center justify-between px-8 py-5 border-t border-border bg-bg">
-      <button id="prev-btn" class="text-secondary text-sm font-500 hover:text-text-dark transition-colors invisible" onclick="prevSlide()">
+    <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 px-5 sm:px-8 py-4 sm:py-5 border-t border-border bg-bg shrink-0">
+      <button id="prev-btn" class="w-full sm:w-auto text-secondary text-sm font-500 hover:text-text-dark transition-colors invisible" onclick="prevSlide()">
         ← Sebelumnya
       </button>
-      <span id="slide-counter" class="text-secondary-light text-sm">1 / 2</span>
-      <button id="next-btn" class="bg-primary text-white text-sm font-600 px-5 py-2.5 rounded-xl hover:bg-primary-hover transition-colors" onclick="nextSlide()">
+      <span id="slide-counter" class="text-center text-secondary-light text-sm">1 / 2</span>
+      <button id="next-btn" class="w-full sm:w-auto bg-primary text-white text-sm font-600 px-5 py-2.5 rounded-xl hover:bg-primary-hover transition-colors" onclick="nextSlide()">
         Selanjutnya →
       </button>
     </div>

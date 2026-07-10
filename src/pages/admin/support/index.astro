@@ -125,12 +125,12 @@ function formatDate(iso: string) {
     ))}
   </div>
 
-  <div class="bg-white border border-border rounded-2xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
+  <div class="bg-white border border-border rounded-2xl p-4 mb-6 flex flex-col lg:flex-row lg:items-center gap-3">
     <div class="min-w-0 flex-1">
       <p class="text-sm font-600 text-text-dark">Filter PIC IT</p>
       <p class="text-xs text-secondary mt-1">Saring tiket berdasarkan penanggung jawab saat ini.</p>
     </div>
-    <form method="GET" class="flex items-center gap-3 flex-wrap">
+    <form method="GET" class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap w-full lg:w-auto">
       {statusFilter !== 'all' && <input type="hidden" name="status" value={statusFilter} />}
       <select name="assignee" class="border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all bg-white appearance-none">
         <option value="all" selected={assigneeFilter === 'all'}>Semua PIC</option>
@@ -157,7 +157,7 @@ function formatDate(iso: string) {
         name="q"
         value={searchFilter}
         placeholder="Contoh: SUP-2026, Operasional, Printer"
-        class="min-w-[280px] border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light"
+        class="w-full sm:min-w-[280px] border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light"
       />
       <button type="submit" class="bg-primary text-white font-600 text-sm px-4 py-2.5 rounded-xl hover:bg-primary-hover transition-colors">Cari</button>
       <a href={redirectTarget(statusFilter, assigneeFilter, '')} class="text-secondary text-sm hover:text-text-dark transition-colors">Reset Cari</a>
@@ -169,7 +169,7 @@ function formatDate(iso: string) {
   <div class="bg-white border border-border rounded-2xl overflow-hidden">
     {tickets && tickets.length > 0 ? (
       <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full min-w-[980px] text-sm">
           <thead>
             <tr class="border-b border-border bg-bg">
               <th class="text-left px-6 py-4 font-600 text-secondary text-xs uppercase tracking-wide">Kode Tiket</th>
@@ -202,7 +202,7 @@ function formatDate(iso: string) {
                 </td>
                 <td class="px-6 py-4 text-secondary">{t.assigned_profile?.full_name || '—'}</td>
                 <td class="px-6 py-4 min-w-[220px]">
-                  <form method="POST" class="flex items-center gap-2">
+                  <form method="POST" class="flex items-center gap-2 min-w-[220px]">
                     <input type="hidden" name="action" value="quick_assign" />
                     <input type="hidden" name="ticket_code" value={t.ticket_code} />
                     <input type="hidden" name="status_context" value={statusFilter} />

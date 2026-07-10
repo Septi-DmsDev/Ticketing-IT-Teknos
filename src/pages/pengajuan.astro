@@ -7,7 +7,7 @@ import Layout from '../layouts/Layout.astro';
     
     <!-- Header -->
     <header class="bg-primary">
-      <div class="max-w-3xl mx-auto px-6 py-4 flex items-center gap-4">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
         <a href="/" class="text-white/60 hover:text-white transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -20,10 +20,10 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </header>
 
-    <div class="max-w-3xl mx-auto px-6 py-10">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
 
       <!-- Form Info Banner -->
-      <div class="bg-white border border-border rounded-2xl p-5 mb-8 flex items-start gap-4">
+      <div class="bg-white border border-border rounded-2xl p-4 sm:p-5 mb-8 flex items-start gap-4">
         <div class="w-10 h-10 bg-primary/8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
           <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -40,11 +40,11 @@ import Layout from '../layouts/Layout.astro';
 
         <!-- Section: Identitas -->
         <section class="bg-white border border-border rounded-2xl overflow-hidden">
-          <div class="px-7 py-5 border-b border-border">
+          <div class="px-5 sm:px-7 py-5 border-b border-border">
             <h2 class="font-700 text-text-dark text-base">Identitas Pemohon</h2>
             <p class="text-secondary text-sm mt-0.5">Data diri tidak digunakan untuk login, hanya untuk keperluan identifikasi tiket.</p>
           </div>
-          <div class="px-7 py-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="px-5 sm:px-7 py-6 grid grid-cols-1 md:grid-cols-2 gap-5">
             <div class="md:col-span-2">
               <label for="req-name" class="block text-sm font-600 text-text-dark mb-2">Nama Lengkap <span class="text-red-500">*</span></label>
               <input id="req-name" name="name" type="text" required placeholder="Masukkan nama lengkap Anda" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-secondary-light" />
@@ -66,11 +66,11 @@ import Layout from '../layouts/Layout.astro';
 
         <!-- Section: Detail Pengajuan -->
         <section class="bg-white border border-border rounded-2xl overflow-hidden">
-          <div class="px-7 py-5 border-b border-border">
+          <div class="px-5 sm:px-7 py-5 border-b border-border">
             <h2 class="font-700 text-text-dark text-base">Detail Pengajuan</h2>
             <p class="text-secondary text-sm mt-0.5">Jelaskan kebutuhan Anda sedetail mungkin agar tim IT dapat menilai dengan tepat.</p>
           </div>
-          <div class="px-7 py-6 space-y-5">
+          <div class="px-5 sm:px-7 py-6 space-y-5">
             
             <div>
               <label for="req-title" class="block text-sm font-600 text-text-dark mb-2">Judul Pengajuan <span class="text-red-500">*</span></label>
@@ -128,7 +128,7 @@ import Layout from '../layouts/Layout.astro';
         <!-- Submit Button -->
         <div class="flex items-center justify-between">
           <a href="/" class="text-secondary text-sm hover:text-text-dark transition-colors">← Kembali ke beranda</a>
-          <button type="submit" id="submit-btn" class="bg-primary text-white font-600 px-8 py-3.5 rounded-xl hover:bg-primary-hover transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+          <button type="submit" id="submit-btn" class="w-full sm:w-auto bg-primary text-white font-600 px-8 py-3.5 rounded-xl hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
             </svg>
@@ -149,7 +149,7 @@ import Layout from '../layouts/Layout.astro';
         </div>
         <h2 class="text-xl font-700 text-text-dark mb-2">Pengajuan Berhasil Dikirim!</h2>
         <p class="text-secondary text-sm mb-6">Tim IT akan segera meninjau permintaan Anda. Simpan kode tiket berikut untuk melacak progress:</p>
-        <div class="bg-bg border border-border rounded-xl px-6 py-4 mb-6">
+        <div class="bg-bg border border-border rounded-xl px-4 sm:px-6 py-4 mb-6">
           <p class="text-secondary text-xs mb-1">Kode Tiket Anda</p>
           <p id="success-ticket-code" class="text-2xl font-700 font-mono text-primary tracking-wider"></p>
         </div>
