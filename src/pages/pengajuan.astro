@@ -153,6 +153,9 @@ import Layout from '../layouts/Layout.astro';
           <p class="text-secondary text-xs mb-1">Kode Tiket Anda</p>
           <p id="success-ticket-code" class="text-2xl font-700 font-mono text-primary tracking-wider"></p>
         </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-xs text-amber-800 text-left">
+          <strong>Penting:</strong> Catat kode ini. Kode tiket <strong>tidak dapat dipulihkan</strong> jika hilang.
+        </div>
         <button onclick="copyCode()" class="w-full bg-primary text-white font-600 py-3 rounded-xl hover:bg-primary-hover transition-colors mb-3">
           Salin Kode Tiket
         </button>
@@ -210,7 +213,6 @@ import Layout from '../layouts/Layout.astro';
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
     btn.textContent = 'Mengupload Lampiran...';
-    btn.textContent = 'Memproses...';
 
     const formData = new FormData(form);
     

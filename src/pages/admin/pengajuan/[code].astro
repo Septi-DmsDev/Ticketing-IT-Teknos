@@ -1,7 +1,7 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { supabaseAdmin as supabase } from '../../../lib/supabase-admin';
-import { canTransitionFeatureRequestStatus, isValidFeatureRequestStatus } from '../../../lib/status-flow';
+import { canTransitionFeatureRequestStatus, isValidFeatureRequestStatus, type FeatureRequestStatus } from '../../../lib/status-flow';
 
 const { code } = Astro.params;
 
@@ -10,6 +10,12 @@ const { data: req } = await supabase
   .select('*')
   .eq('ticket_code', code)
   .maybeSingle();
+
+const { data: itStaffOptions } = await supabase
+  .from('profiles')
+  .select('id, full_name, role')
+  .in('role', ['super_admin', 'it_staff'])
+  .order('full_name', { ascending: true });
 
 if (!req) return Astro.redirect('/admin/pengajuan');
 
@@ -45,6 +51,14 @@ if (Astro.request.method === 'POST') {
     }).eq('ticket_code', code);
     if (error) errorMsg = error.message;
     else successMsg = 'Respons pengajuan berhasil disimpan.';
+  }
+
+  if (action === 'assign_pic') {
+    const assignedTo = String(form.get('assigned_to') || '');
+    const updates: Record<string, unknown> = { assigned_to: assignedTo || null };
+    const { error } = await supabase.from('feature_requests').update(updates).eq('ticket_code', code);
+    if (error) errorMsg = error.message;
+    else successMsg = assignedTo ? 'PIC IT berhasil ditetapkan.' : 'Assignment PIC IT berhasil dikosongkan.';
   }
 }
 
@@ -165,21 +179,70 @@ function formatDate(iso: string) {
     <!-- Right: Actions + Meta -->
     <div class="space-y-5">
       <div class="bg-white border border-border rounded-2xl p-5 sm:p-6">
+        <h3 class="font-700 text-text-dark text-sm mb-4">Tentukan PIC IT</h3>
+        <form method="POST" class="space-y-4">
+          <input type="hidden" name="action" value="assign_pic" />
+          <div>
+            <label for="assigned_to" class="block text-sm font-600 text-text-dark mb-2">PIC Penanganan</label>
+            <select id="assigned_to" name="assigned_to" class="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all bg-white appearance-none">
+              <option value="">Belum ditugaskan</option>
+              {(itStaffOptions || []).map((staff) => (
+                <option value={staff.id} selected={req.assigned_to === staff.id}>
+                  {staff.full_name} {staff.role === 'super_admin' ? '(Super Admin)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" class="w-full bg-primary text-white font-600 text-sm px-5 py-2.5 rounded-xl hover:bg-primary-hover transition-colors">
+            Simpan PIC
+          </button>
+        </form>
+      </div>
+
+      <div class="bg-white border border-border rounded-2xl p-5 sm:p-6">
         <h3 class="font-700 text-text-dark text-sm mb-4">Update Status</h3>
         <form method="POST" class="space-y-2">
           <input type="hidden" name="action" value="update_status" />
-          {STATUS_FLOW.filter(s => s !== req.status).map(s => (
-            <button
-              type="submit" name="status" value={s}
-              class={`w-full py-2.5 rounded-xl text-sm font-600 border transition-colors text-left px-4 flex items-center gap-2 ${
-                s === 'approved' ? 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100' :
-                s === 'rejected' ? 'border-red-200 bg-red-50 text-red-800 hover:bg-red-100' :
-                'border-border bg-bg text-text-dark hover:bg-border'
-              }`}
-            >
-              {STATUS_LABELS[s] || s}
-            </button>
-          ))}
+          {(() => {
+            // Only show buttons for VALID transitions from current status
+            const validNextStatuses = isValidFeatureRequestStatus(req.status)
+              ? STATUS_FLOW.filter(s =>
+                  isValidFeatureRequestStatus(s) &&
+                  canTransitionFeatureRequestStatus(req.status as FeatureRequestStatus, s as FeatureRequestStatus)
+                )
+              : [];
+
+            if (validNextStatuses.length === 0) {
+              return (
+                <p class="text-secondary text-xs text-center py-2">
+                  {req.status === 'done' || req.status === 'rejected'
+                    ? 'Pengajuan ini sudah final.'
+                    : 'Tidak ada transisi status yang tersedia.'}
+                </p>
+              );
+            }
+
+            return validNextStatuses.map(s => (
+              <button
+                type="submit" name="status" value={s}
+                class={`w-full py-2.5 rounded-xl text-sm font-600 border transition-colors text-left px-4 flex items-center gap-2 ${
+                  s === 'approved' || s === 'done' ? 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100' :
+                  s === 'rejected' ? 'border-red-200 bg-red-50 text-red-800 hover:bg-red-100' :
+                  s === 'in_progress' ? 'border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100' :
+                  'border-border bg-bg text-text-dark hover:bg-border'
+                }`}
+              >
+                <span class={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  s === 'approved' || s === 'done' ? 'bg-green-500' :
+                  s === 'rejected' ? 'bg-red-500' :
+                  s === 'in_progress' ? 'bg-orange-400' :
+                  s === 'testing' ? 'bg-purple-500' :
+                  'bg-blue-400'
+                }`}></span>
+                {STATUS_LABELS[s] || s}
+              </button>
+            ));
+          })()}
         </form>
       </div>
 
@@ -190,6 +253,8 @@ function formatDate(iso: string) {
           {req.it_priority && <div class="flex justify-between"><p class="text-secondary">Override IT</p><span class={`font-700 px-2 py-0.5 rounded-full badge-${req.it_priority}`}>{PRIORITY_LABELS[req.it_priority]}</span></div>}
           {req.target_date && <div class="flex justify-between"><p class="text-secondary">Target Selesai</p><p class="font-600 text-text-dark">{formatDate(req.target_date)}</p></div>}
           <div class="flex justify-between pt-2 border-t border-border"><p class="text-secondary">Masuk</p><p class="font-600 text-text-dark">{formatDate(req.created_at)}</p></div>
+          <div class="flex justify-between"><p class="text-secondary">PIC IT</p><p class="font-600 text-text-dark">{itStaffOptions?.find((staff) => staff.id === req.assigned_to)?.full_name || 'Belum ditugaskan'}</p></div>
+          <div class="flex justify-between pt-2 border-t border-border"><p class="text-secondary">Usia Tiket</p><p class="font-600 text-text-dark">{((Date.now() - new Date(req.created_at).getTime()) / 3600000).toFixed(1)} jam</p></div>
         </div>
       </div>
     </div>

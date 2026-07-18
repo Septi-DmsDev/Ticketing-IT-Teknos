@@ -15,12 +15,12 @@ const [
   supabase.from('feature_requests').select('*', { count: 'exact', head: true }),
 ]);
 
-// Fetch recent tickets needing action (open + SLA critical)
+// Fetch recent tickets needing action (open + assigned + in_progress)
 const { data: urgentTickets } = await supabase
   .from('support_tickets')
   .select('ticket_code, reporter_name, reporter_division, category_name, status, urgency, created_at, assigned_profile:profiles!support_tickets_assigned_to_fkey(full_name)')
-  .in('status', ['open', 'assigned'])
-  .order('created_at', { ascending: true })
+  .in('status', ['open', 'assigned', 'in_progress'])
+  .order('created_at', { ascending: false })
   .limit(5);
 
 // Fetch recent feature requests
@@ -47,12 +47,6 @@ function formatRelative(iso: string) {
   return `${Math.floor(hrs / 24)} hari lalu`;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  open: 'Pending', assigned: 'Diterima', in_progress: 'Sedang Dikerjakan',
-  resolved: 'Sudah Diperbaiki', closed: 'Selesai (Closed)', reviewing: 'Ditinjau',
-  approved: 'Disetujui', in_progress_req: 'Sedang Dikerjakan', done: 'Selesai', rejected: 'Ditolak',
-};
-const PRIORITY_CLASS: Record<string, string> = { low: 'badge-low', medium: 'badge-medium', high: 'badge-high' };
 const URGENCY_CLASSES: Record<string, string> = {
   normal: 'bg-slate-100 text-slate-700',
   urgent: 'bg-amber-100 text-amber-800',
@@ -124,8 +118,8 @@ const URGENCY_LABELS: Record<string, string> = { normal: 'Normal', urgent: 'Urge
     <div class="bg-white border border-border rounded-2xl overflow-hidden">
       <div class="px-6 py-5 border-b border-border flex items-center justify-between">
         <div>
-          <h2 class="font-700 text-text-dark text-sm">Tiket Support Menunggu</h2>
-          <p class="text-secondary text-xs mt-0.5">Diurutkan berdasarkan waktu masuk (terlama dulu)</p>
+          <h2 class="font-700 text-text-dark text-sm">Tiket Support Aktif</h2>
+          <p class="text-secondary text-xs mt-0.5">Belum selesai — diurutkan terlama dulu</p>
         </div>
         <a href="/admin/support" class="text-primary text-xs font-600 hover:underline">Lihat semua →</a>
       </div>
@@ -142,7 +136,7 @@ const URGENCY_LABELS: Record<string, string> = { normal: 'Normal', urgent: 'Urge
                 <div class="flex-1 min-w-0">
                   <p class="font-600 text-text-dark text-sm truncate">{t.category_name || 'Umum'}</p>
                   <p class="text-secondary text-xs truncate">{t.reporter_name} · {t.reporter_division}</p>
-                  <p class="text-secondary-light text-xs truncate mt-1">PIC: {t.assigned_profile?.full_name || 'Belum ditugaskan'}</p>
+                  <p class="text-secondary-light text-xs truncate mt-1">PIC: {(t.assigned_profile as any)?.full_name || 'Belum ditugaskan'}</p>
                 </div>
                 <div class="text-right flex-shrink-0">
                   <span class={`inline-block text-[11px] font-700 px-2 py-0.5 rounded-full mb-1 ${URGENCY_CLASSES[t.urgency] || URGENCY_CLASSES.normal}`}>

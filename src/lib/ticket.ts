@@ -10,7 +10,7 @@ export interface SupportTicketPayload {
   reporter_name: string;
   reporter_position: string;
   reporter_division: string;
-  category_id: string;
+  category_id?: string;
   category_name: string;
   description: string;
   location?: string;

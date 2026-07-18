@@ -52,7 +52,7 @@ const { data: itStaffOptions } = await supabase
 let query = supabase
   .from('support_tickets')
   .select('*, assigned_profile:profiles!support_tickets_assigned_to_fkey(full_name)')
-  .order('created_at', { ascending: true });
+  .order('created_at', { ascending: false });
 
 if (statusFilter !== 'all') {
   query = query.eq('status', statusFilter);

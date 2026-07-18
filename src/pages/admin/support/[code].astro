@@ -1,7 +1,7 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { supabaseAdmin as supabase } from '../../../lib/supabase-admin';
-import { canTransitionSupportStatus, isValidSupportStatus } from '../../../lib/status-flow';
+import { canTransitionSupportStatus, isValidSupportStatus, type SupportStatus } from '../../../lib/status-flow';
 
 const { code } = Astro.params;
 
@@ -91,7 +91,6 @@ const STATUS_LABELS: Record<string, string> = {
   open: 'Pending', assigned: 'Diterima', in_progress: 'Sedang Dikerjakan',
   resolved: 'Sudah Diperbaiki', closed: 'Selesai (Closed)',
 };
-const STATUS_FLOW = ['open', 'assigned', 'in_progress', 'resolved'];
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -238,23 +237,43 @@ function formatDate(iso: string) {
         <h3 class="font-700 text-text-dark text-sm mb-4">Update Status</h3>
         <form method="POST" class="space-y-3">
           <input type="hidden" name="action" value="update_status" />
-          {['open', 'assigned', 'in_progress', 'resolved', 'closed'].filter(s => s !== ticket.status).map(s => (
-            <button
-              type="submit"
-              name="status"
-              value={s}
-              class={`w-full py-2.5 rounded-xl text-sm font-600 border transition-colors text-left px-4 flex items-center gap-2 ${
-                s === 'resolved' || s === 'closed'
-                  ? 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100'
-                  : 'border-border bg-bg text-text-dark hover:bg-border'
-              }`}
-            >
-              <span class={`w-2 h-2 rounded-full flex-shrink-0 ${
-                (s === 'resolved' || s === 'closed') ? 'bg-green-500' : s === 'in_progress' ? 'bg-orange-400' : s === 'assigned' ? 'bg-purple-500' : 'bg-blue-400'
-              }`}></span>
-              {STATUS_LABELS[s] || s}
-            </button>
-          ))}
+          {(() => {
+            // Only show buttons for VALID transitions from current status
+            const validNextStatuses = isValidSupportStatus(ticket.status)
+              ? (['open', 'assigned', 'in_progress', 'resolved', 'closed'] as SupportStatus[])
+                  .filter(s => canTransitionSupportStatus(ticket.status as SupportStatus, s))
+              : [];
+
+            if (validNextStatuses.length === 0) {
+              return (
+                <p class="text-secondary text-xs text-center py-2">
+                  {ticket.status === 'resolved'
+                    ? 'Menunggu konfirmasi pelapor untuk menutup tiket.'
+                    : 'Tidak ada transisi status yang tersedia.'}
+                </p>
+              );
+            }
+
+            return validNextStatuses.map(s => (
+              <button
+                type="submit"
+                name="status"
+                value={s}
+                class={`w-full py-2.5 rounded-xl text-sm font-600 border transition-colors text-left px-4 flex items-center gap-2 ${
+                  s === 'resolved' || s === 'closed'
+                    ? 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100'
+                    : s === 'in_progress'
+                    ? 'border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100'
+                    : 'border-border bg-bg text-text-dark hover:bg-border'
+                }`}
+              >
+                <span class={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  s === 'resolved' ? 'bg-green-500' : s === 'in_progress' ? 'bg-orange-400' : s === 'assigned' ? 'bg-purple-500' : 'bg-blue-400'
+                }`}></span>
+                {STATUS_LABELS[s] || s}
+              </button>
+            ));
+          })()}
         </form>
       </div>
 

@@ -3,6 +3,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import { supabaseAdmin } from '../../lib/supabase-admin';
 
 const profile = Astro.locals.profile;
+const user = Astro.locals.user;
 if (profile?.role !== 'super_admin') {
   return Astro.redirect('/admin');
 }
@@ -15,38 +16,56 @@ if (Astro.request.method === 'POST') {
   try {
     const bodyText = await Astro.request.text();
     const params = new URLSearchParams(bodyText);
-    const email = params.get('email');
-    const password = params.get('password');
-    const fullName = params.get('fullName');
-    
-    if (!email || !password || !fullName) {
-      errorMsg = 'Semua field (Nama, Email, Password) wajib diisi.';
-    } else {
-      // 1. Create user in Supabase Auth using Admin Client
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: email,
-        password: password,
-        email_confirm: true // Auto confirm since it's created by admin
-      });
+    const action = params.get('action') || 'create';
 
-      if (authError) {
-        errorMsg = 'Gagal membuat akun Auth: ' + authError.message;
-      } else if (authData.user) {
-        // 2. Insert into public.profiles
-        const { error: profileError } = await supabaseAdmin
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            full_name: fullName,
-            role: 'it_staff'
-          });
+    if (action === 'create') {
+      const email = params.get('email');
+      const password = params.get('password');
+      const fullName = params.get('fullName');
+      
+      if (!email || !password || !fullName) {
+        errorMsg = 'Semua field (Nama, Email, Password) wajib diisi.';
+      } else {
+        // 1. Create user in Supabase Auth using Admin Client
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email: email,
+          password: password,
+          email_confirm: true // Auto confirm since it's created by admin
+        });
 
-        if (profileError) {
-          // Rollback: delete auth user if profile creation fails
-          await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-          errorMsg = 'Gagal menyimpan profil: ' + profileError.message;
+        if (authError) {
+          errorMsg = 'Gagal membuat akun Auth: ' + authError.message;
+        } else if (authData.user) {
+          // 2. Insert into public.profiles
+          const { error: profileError } = await supabaseAdmin
+            .from('profiles')
+            .insert({
+              id: authData.user.id,
+              full_name: fullName,
+              role: 'it_staff'
+            });
+
+          if (profileError) {
+            // Rollback: delete auth user if profile creation fails
+            await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+            errorMsg = 'Gagal menyimpan profil: ' + profileError.message;
+          } else {
+            successMsg = 'Akun IT Staff berhasil ditambahkan!';
+          }
+        }
+      }
+    } else if (action === 'reset_password') {
+      const userId = params.get('user_id');
+      const newPassword = params.get('new_password');
+      
+      if (!userId || !newPassword) {
+        errorMsg = 'ID User dan Password baru wajib diisi.';
+      } else {
+        const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, { password: newPassword });
+        if (authError) {
+          errorMsg = 'Gagal mereset password: ' + authError.message;
         } else {
-          successMsg = 'Akun IT Staff berhasil ditambahkan!';
+          successMsg = 'Password akun berhasil direset!';
         }
       }
     }
@@ -57,7 +76,7 @@ if (Astro.request.method === 'POST') {
 }
 
 // Fetch all profiles (IT Staff and Super Admin)
-const { data: profiles, error: fetchError } = await supabaseAdmin
+const { data: profiles } = await supabaseAdmin
   .from('profiles')
   .select('id, full_name, role, phone, created_at')
   .order('created_at', { ascending: false });
@@ -112,9 +131,16 @@ const itStaffs = profiles?.filter(p => p.role === 'it_staff') || [];
                   <p class="font-600 text-text-dark text-sm">{admin.full_name}</p>
                   <p class="text-xs text-secondary mt-0.5">ID: {admin.id.substring(0, 8)}...</p>
                 </div>
-                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-600 bg-primary/10 text-primary self-start sm:self-auto">
-                  Akses Penuh
-                </span>
+                <div class="flex items-center gap-2 self-start sm:self-auto">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-600 bg-primary/10 text-primary">
+                    Akses Penuh
+                  </span>
+                  {admin.id !== user?.id && (
+                    <button onclick={`openResetModal('${admin.id}', '${admin.full_name}')`} class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-600 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors">
+                      Reset Password
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
             {superAdmins.length === 0 && (
@@ -141,9 +167,14 @@ const itStaffs = profiles?.filter(p => p.role === 'it_staff') || [];
                   <p class="font-600 text-text-dark text-sm">{staff.full_name}</p>
                   <p class="text-xs text-secondary mt-0.5">Bergabung: {new Date(staff.created_at).toLocaleDateString('id-ID')}</p>
                 </div>
-                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-600 bg-gray-100 text-gray-700 self-start sm:self-auto border border-border">
-                  Agen Support
-                </span>
+                <div class="flex items-center gap-2 self-start sm:self-auto">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-600 bg-gray-100 text-gray-700 border border-border">
+                    Agen Support
+                  </span>
+                  <button onclick={`openResetModal('${staff.id}', '${staff.full_name}')`} class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-600 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors">
+                    Reset Password
+                  </button>
+                </div>
               </div>
             ))}
             {itStaffs.length === 0 && (
@@ -201,4 +232,53 @@ const itStaffs = profiles?.filter(p => p.role === 'it_staff') || [];
 
     </div>
   </div>
+
+  <!-- Reset Password Modal -->
+  <div id="reset-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/60 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <h2 class="text-lg font-700 text-text-dark mb-1">Reset Password Akun</h2>
+      <p class="text-sm text-secondary mb-6">Atur password baru untuk <span id="reset-target-name" class="font-600 text-text-dark"></span>.</p>
+      
+      <form method="POST" class="space-y-4">
+        <input type="hidden" name="action" value="reset_password" />
+        <input type="hidden" id="reset-user-id" name="user_id" value="" />
+        
+        <div>
+          <label for="new_password" class="block text-xs font-600 text-text-dark mb-1.5 uppercase tracking-wide">Password Baru</label>
+          <input
+            type="text" id="new_password" name="new_password" required
+            placeholder="Minimal 6 karakter"
+            class="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-secondary-light"
+          />
+        </div>
+        
+        <div class="flex items-center justify-end gap-3 mt-6">
+          <button type="button" onclick="closeResetModal()" class="px-5 py-2.5 rounded-xl text-sm font-600 text-secondary hover:text-text-dark hover:bg-bg transition-colors">
+            Batal
+          </button>
+          <button type="submit" class="bg-primary text-white font-600 py-2.5 px-6 rounded-xl hover:bg-primary-hover transition-colors text-sm">
+            Simpan Password Baru
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </AdminLayout>
+
+<script>
+  function openResetModal(userId: string, userName: string) {
+    (document.getElementById('reset-user-id') as HTMLInputElement).value = userId;
+    (document.getElementById('reset-target-name') as HTMLElement).textContent = userName;
+    document.getElementById('reset-modal')?.classList.remove('hidden');
+  }
+
+  function closeResetModal() {
+    document.getElementById('reset-modal')?.classList.add('hidden');
+    (document.getElementById('reset-user-id') as HTMLInputElement).value = '';
+    (document.getElementById('new_password') as HTMLInputElement).value = '';
+  }
+
+  (window as any).openResetModal = openResetModal;
+  (window as any).closeResetModal = closeResetModal;
+</script>

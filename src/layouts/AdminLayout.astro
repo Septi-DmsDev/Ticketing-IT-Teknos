@@ -135,7 +135,22 @@ const user = Astro.locals.user;
             </button>
             <h1 class="font-700 text-text-dark text-base sm:text-lg truncate">{title}</h1>
           </div>
-          <div class="flex items-center gap-3 shrink-0">
+          <div class="flex items-center gap-2 shrink-0">
+            <!-- Notification Bell Button -->
+            <button
+              id="notif-btn"
+              type="button"
+              title="Notifikasi tiket baru"
+              class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-bg text-text-dark hover:bg-border transition-colors"
+              aria-label="Toggle notifikasi"
+            >
+              <!-- Bell icon -->
+              <svg id="notif-icon-bell" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+              </svg>
+              <!-- Active dot -->
+              <span id="notif-active-dot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-green-500 rounded-full ring-2 ring-white"></span>
+            </button>
             <a href="/" target="_blank" class="text-secondary text-sm hover:text-primary transition-colors flex items-center gap-1.5">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
@@ -159,7 +174,7 @@ const user = Astro.locals.user;
       const toggle = document.getElementById('admin-sidebar-toggle');
       const backdrop = document.getElementById('admin-sidebar-backdrop');
 
-      function setSidebar(open) {
+      function setSidebar(open: boolean) {
         if (!sidebar || !toggle || !backdrop) return;
         sidebar.classList.toggle('-translate-x-full', !open);
         backdrop.classList.toggle('opacity-0', !open);
@@ -177,6 +192,98 @@ const user = Astro.locals.user;
 
       window.addEventListener('resize', () => {
         if (window.innerWidth >= 1024) setSidebar(false);
+      });
+    </script>
+
+    <!-- Notification + Realtime Script -->
+    <script>
+      import {
+        isNotificationEnabled,
+        isNotificationsSupported,
+        getNotificationState,
+        requestNotificationPermission,
+        disableNotifications,
+        startRealtimeNotifications,
+        refreshSupportBadge,
+      } from '../lib/realtime-notifications';
+
+      // ── Service Worker Registration ──────────────────────────
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((err) => {
+          console.warn('[SW] Registration failed:', err);
+        });
+      }
+
+      // ── Badge count on load ──────────────────────────────────
+      refreshSupportBadge();
+
+      // ── Notification Button State ────────────────────────────
+      const notifBtn = document.getElementById('notif-btn');
+      const activeDot = document.getElementById('notif-active-dot');
+
+      function updateNotifUI() {
+        if (!notifBtn || !activeDot) return;
+        const enabled = isNotificationEnabled();
+        const state = getNotificationState();
+
+        if (enabled) {
+          notifBtn.classList.add('border-green-300', 'bg-green-50', 'text-green-700');
+          notifBtn.classList.remove('border-border', 'bg-bg', 'text-text-dark');
+          notifBtn.title = 'Notifikasi aktif — klik untuk matikan';
+          activeDot.classList.remove('hidden');
+        } else {
+          notifBtn.classList.remove('border-green-300', 'bg-green-50', 'text-green-700');
+          notifBtn.classList.add('border-border', 'bg-bg', 'text-text-dark');
+          notifBtn.title = state === 'denied'
+            ? 'Notifikasi diblokir browser — ubah izin di pengaturan browser'
+            : 'Klik untuk aktifkan notifikasi tiket baru';
+          activeDot.classList.add('hidden');
+        }
+      }
+
+      notifBtn?.addEventListener('click', async () => {
+        if (!isNotificationsSupported()) {
+          alert('Browser Anda tidak mendukung notifikasi.');
+          return;
+        }
+
+        if (isNotificationEnabled()) {
+          // Turn off
+          disableNotifications();
+          updateNotifUI();
+          return;
+        }
+
+        const state = getNotificationState();
+        if (state === 'denied') {
+          alert('Notifikasi diblokir. Buka pengaturan browser → Site Settings → Notifications dan izinkan situs ini.');
+          return;
+        }
+
+        const granted = await requestNotificationPermission();
+        if (granted) {
+          startRealtimeNotifications();
+          // Show test notification
+          new Notification('✅ Notifikasi Aktif!', {
+            body: 'Anda akan menerima notifikasi saat ada tiket baru masuk.',
+            icon: '/favicon.svg',
+          });
+        }
+        updateNotifUI();
+      });
+
+      // ── Auto-start if already enabled ────────────────────────
+      if (isNotificationEnabled()) {
+        startRealtimeNotifications();
+      }
+
+      // Initialise UI state
+      updateNotifUI();
+
+      // ── Listen for new ticket events (e.g. to flash badge) ───
+      window.addEventListener('it:new-ticket', (e: Event) => {
+        const { type } = (e as CustomEvent).detail;
+        if (type === 'support') refreshSupportBadge();
       });
     </script>
   </body>
